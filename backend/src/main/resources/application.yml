@@ -1,0 +1,41 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: campus-hub-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/campus_hub?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:campus_hub}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+  security:
+    jwt-secret: ${JWT_SECRET:}
+    access-token-minutes: ${JWT_ACCESS_TOKEN_MINUTES:60}
+    refresh-token-days: ${JWT_REFRESH_TOKEN_DAYS:1}
+    remember-me-refresh-token-days: ${JWT_REMEMBER_ME_REFRESH_TOKEN_DAYS:30}
+  otp:
+    expiry-minutes: ${OTP_EXPIRY_MINUTES:10}
+    expose-dev-codes: ${OTP_EXPOSE_DEV_CODES:true}

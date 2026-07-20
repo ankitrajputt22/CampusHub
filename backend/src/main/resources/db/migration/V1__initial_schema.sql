@@ -1,0 +1,2 @@
+-- Initial migration reserved for the Campus Hub foundation.
+-- Product tables will be added when their modules are implemented.

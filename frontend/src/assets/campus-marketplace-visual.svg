@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720" role="img" aria-labelledby="title desc">
+  <title id="title">Campus Hub marketplace preview</title>
+  <desc id="desc">Students using a secure campus marketplace dashboard on a laptop.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#dff7ff"/>
+      <stop offset="0.52" stop-color="#f7fbff"/>
+      <stop offset="1" stop-color="#d9f4ee"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0d6d80"/>
+      <stop offset="1" stop-color="#34d0d8"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0a2246"/>
+      <stop offset="1" stop-color="#132f5d"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#09264d" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="960" height="720" rx="36" fill="url(#sky)"/>
+  <circle cx="130" cy="112" r="74" fill="#fff7cf" opacity="0.92"/>
+  <path d="M0 470c88-76 164-78 270-34 93 39 171 44 272 3 134-55 272-33 418 55v226H0z" fill="#bcebd9"/>
+  <path d="M0 530c113-55 214-48 321-10 127 46 238 42 363-3 105-37 190-37 276 0v203H0z" fill="#74d1bd" opacity="0.78"/>
+
+  <g opacity="0.82">
+    <rect x="102" y="178" width="138" height="218" rx="10" fill="#eff6ff"/>
+    <rect x="123" y="204" width="26" height="192" fill="#b9c9dd"/>
+    <rect x="165" y="204" width="26" height="192" fill="#b9c9dd"/>
+    <rect x="206" y="204" width="26" height="192" fill="#b9c9dd"/>
+    <path d="M81 178h180l-90-66z" fill="#c7d6e9"/>
+    <rect x="81" y="396" width="180" height="24" rx="6" fill="#9fb2ca"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="252" y="258" width="504" height="312" rx="28" fill="#ffffff"/>
+    <rect x="286" y="296" width="436" height="204" rx="18" fill="#e8eef7"/>
+    <rect x="314" y="322" width="380" height="150" rx="14" fill="url(#screen)"/>
+    <rect x="348" y="350" width="122" height="22" rx="11" fill="#ffffff" opacity="0.9"/>
+    <rect x="348" y="394" width="238" height="14" rx="7" fill="#ffffff" opacity="0.66"/>
+    <rect x="348" y="422" width="186" height="14" rx="7" fill="#ffffff" opacity="0.46"/>
+    <rect x="572" y="346" width="86" height="86" rx="18" fill="#031635" opacity="0.16"/>
+    <path d="M599 392l19 19 34-46" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M230 582h548l-46 54H276z" fill="#cfd8e6"/>
+    <path d="M394 582h220l24 28H369z" fill="#acb9cc"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <circle cx="245" cy="301" r="56" fill="#6d3f2f"/>
+    <circle cx="245" cy="292" r="42" fill="#8f5b43"/>
+    <path d="M163 498c8-77 38-121 82-121s76 45 84 121z" fill="#f5a55f"/>
+    <path d="M203 340c18 30 64 30 83 0v60c0 22-16 39-40 39s-43-17-43-39z" fill="#b8795d"/>
+    <path d="M164 498h166v42H164z" fill="#196b7c"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <circle cx="730" cy="312" r="52" fill="#3f291f"/>
+    <circle cx="724" cy="306" r="39" fill="#a66a4a"/>
+    <path d="M652 510c6-75 34-117 78-117 42 0 72 42 80 117z" fill="#7aa7ff"/>
+    <path d="M688 350c17 27 58 27 75 0v54c0 21-15 37-37 37-23 0-38-16-38-37z" fill="#c58662"/>
+    <path d="M652 510h158v40H652z" fill="#10284e"/>
+  </g>
+
+  <g>
+    <rect x="86" y="535" width="114" height="78" rx="18" fill="#ffffff" opacity="0.95"/>
+    <rect x="108" y="555" width="70" height="12" rx="6" fill="#0f7489"/>
+    <rect x="108" y="581" width="45" height="12" rx="6" fill="#a4b1c3"/>
+    <rect x="790" y="204" width="98" height="84" rx="18" fill="#ffffff" opacity="0.95"/>
+    <circle cx="822" cy="246" r="18" fill="#14bfd7"/>
+    <rect x="848" y="229" width="24" height="10" rx="5" fill="#a4b1c3"/>
+    <rect x="848" y="250" width="30" height="10" rx="5" fill="#d0d7e2"/>
+  </g>
+</svg>
