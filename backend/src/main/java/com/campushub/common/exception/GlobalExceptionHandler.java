@@ -21,6 +21,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.failure(exception.getMessage(), null));
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiResponse<String>> handleForbidden(ForbiddenException exception) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.failure(exception.getMessage(), null));
+    }
+
     @ExceptionHandler(ResourceConflictException.class)
     public ResponseEntity<ApiResponse<String>> handleResourceConflict(ResourceConflictException exception) {
         return ResponseEntity

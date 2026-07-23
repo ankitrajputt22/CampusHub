@@ -1,6 +1,8 @@
 package com.campushub.auth.service;
 
 import com.campushub.user.model.User;
+import com.campushub.user.model.UserRole;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
@@ -39,5 +41,20 @@ public class JwtTokenService {
                 .expiration(Date.from(expiresAt))
                 .signWith(key)
                 .compact();
+    }
+
+    public AccessTokenClaims parseAccessToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        Long userId = Long.valueOf(claims.getSubject());
+        UserRole role = UserRole.valueOf(claims.get("role", String.class));
+        return new AccessTokenClaims(userId, role);
+    }
+
+    public record AccessTokenClaims(Long userId, UserRole role) {
     }
 }

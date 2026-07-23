@@ -46,4 +46,8 @@ public class TrustScore {
     public int getScore() {
         return score;
     }
+
+    public User getUser() {
+        return user;
+    }
 }

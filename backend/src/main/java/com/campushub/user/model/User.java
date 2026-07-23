@@ -65,6 +65,15 @@ public class User {
     @Column(name = "profile_photo_file_name", length = 255)
     private String profilePhotoFileName;
 
+    @Column(length = 500)
+    private String bio;
+
+    @Column(name = "linkedin_url", length = 255)
+    private String linkedinUrl;
+
+    @Column(name = "github_url", length = 255)
+    private String githubUrl;
+
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 
@@ -153,6 +162,50 @@ public class User {
 
     public String getPhoneNumber() {
         return phoneNumber;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public String getCustomDepartment() {
+        return customDepartment;
+    }
+
+    public String getCourse() {
+        return course;
+    }
+
+    public String getCustomCourse() {
+        return customCourse;
+    }
+
+    public String getYearOfStudy() {
+        return yearOfStudy;
+    }
+
+    public String getCustomYearOfStudy() {
+        return customYearOfStudy;
+    }
+
+    public String getHostelOrCampusArea() {
+        return hostelOrCampusArea;
+    }
+
+    public String getProfilePhotoFileName() {
+        return profilePhotoFileName;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public String getLinkedinUrl() {
+        return linkedinUrl;
+    }
+
+    public String getGithubUrl() {
+        return githubUrl;
     }
 
     public College getCollege() {

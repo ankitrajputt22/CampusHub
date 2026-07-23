@@ -1,8 +1,10 @@
-package com.campushub.auth.model;
+package com.campushub.activity.model;
 
 import com.campushub.user.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,8 +15,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 
 @Entity
-@Table(name = "refresh_tokens")
-public class RefreshToken {
+@Table(name = "user_activities")
+public class UserActivity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,41 +26,39 @@ public class RefreshToken {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "token_hash", nullable = false, unique = true, length = 128)
-    private String tokenHash;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 40)
+    private ActivityType type;
 
-    @Column(name = "expires_at", nullable = false)
-    private Instant expiresAt;
-
-    @Column(nullable = false)
-    private boolean revoked;
+    @Column(nullable = false, length = 500)
+    private String message;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected RefreshToken() {
+    protected UserActivity() {
     }
 
-    public RefreshToken(User user, String tokenHash, Instant expiresAt) {
+    public UserActivity(User user, ActivityType type, String message) {
         this.user = user;
-        this.tokenHash = tokenHash;
-        this.expiresAt = expiresAt;
+        this.type = type;
+        this.message = message;
         this.createdAt = Instant.now();
     }
 
-    public User getUser() {
-        return user;
+    public Long getId() {
+        return id;
     }
 
-    public Instant getExpiresAt() {
-        return expiresAt;
+    public ActivityType getType() {
+        return type;
     }
 
-    public boolean isRevoked() {
-        return revoked;
+    public String getMessage() {
+        return message;
     }
 
-    public void revoke() {
-        this.revoked = true;
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 }
