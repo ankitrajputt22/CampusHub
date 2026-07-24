@@ -5,5 +5,6 @@ public enum ItemCondition {
     LIKE_NEW,
     GOOD,
     FAIR,
+    USED,
     POOR
 }

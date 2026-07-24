@@ -36,10 +36,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/colleges/search").permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/user/profile/photo/content/**"
+                        ).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
+                        .requestMatchers("/api/user/**").hasRole("STUDENT")
+                        .requestMatchers("/api/listings/**").hasRole("STUDENT")
+                        .requestMatchers("/api/wishlist/**").hasRole("STUDENT")
+                        .requestMatchers("/api/reports/**").hasRole("STUDENT")
+                        .requestMatchers("/api/orders/**").hasRole("STUDENT")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

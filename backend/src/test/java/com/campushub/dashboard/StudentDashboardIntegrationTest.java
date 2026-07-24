@@ -79,6 +79,7 @@ class StudentDashboardIntegrationTest {
         listingRepository.save(new Listing(
                 delhiUser,
                 "Delhi scientific calculator",
+                "Electronics",
                 new BigDecimal("1250.00"),
                 ItemCondition.GOOD,
                 ListingStatus.ACTIVE,
@@ -87,6 +88,7 @@ class StudentDashboardIntegrationTest {
         listingRepository.save(new Listing(
                 delhiUser,
                 "Inactive Delhi listing",
+                "Books",
                 new BigDecimal("500.00"),
                 ItemCondition.FAIR,
                 ListingStatus.INACTIVE,
@@ -95,6 +97,7 @@ class StudentDashboardIntegrationTest {
         listingRepository.save(new Listing(
                 bombayUser,
                 "Bombay-only textbook",
+                "Books",
                 new BigDecimal("900.00"),
                 ItemCondition.LIKE_NEW,
                 ListingStatus.ACTIVE,
@@ -119,11 +122,12 @@ class StudentDashboardIntegrationTest {
                 .andExpect(jsonPath("$.data.trustScore.score", is(30)))
                 .andExpect(jsonPath("$.data.trustScore.level", is("New / Low Trust")))
                 .andExpect(jsonPath("$.data.trustScore.suggestions", hasSize(4)))
-                .andExpect(jsonPath("$.data.profileCompletion.percentage", is(70)))
+                .andExpect(jsonPath("$.data.profileCompletion.percentage", is(64)))
                 .andExpect(jsonPath("$.data.profileCompletion.completedFields", is(7)))
+                .andExpect(jsonPath("$.data.profileCompletion.totalFields", is(11)))
                 .andExpect(jsonPath(
                         "$.data.profileCompletion.missingFields",
-                        contains("profilePhoto", "bio", "linkedinOrGithub")
+                        contains("profilePhoto", "bio", "linkedinUrl", "githubUrl")
                 ))
                 .andExpect(jsonPath("$.data.stats.activeListings", is(1)))
                 .andExpect(jsonPath("$.data.stats.wishlistItems", is(0)))
@@ -132,6 +136,7 @@ class StudentDashboardIntegrationTest {
                 .andExpect(jsonPath("$.data.stats.unreadNotifications", is(1)))
                 .andExpect(jsonPath("$.data.latestListings", hasSize(1)))
                 .andExpect(jsonPath("$.data.latestListings[0].title", is("Delhi scientific calculator")))
+                .andExpect(jsonPath("$.data.latestListings[0].category", is("Electronics")))
                 .andExpect(jsonPath("$.data.latestListings[0].sellerName", is("Dashboard Delhi Student")))
                 .andExpect(jsonPath("$.data.latestListings[0].sellerTrustScore", is(30)))
                 .andExpect(jsonPath("$.data.latestListings[0].condition", is("Good")))

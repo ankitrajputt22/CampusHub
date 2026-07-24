@@ -26,6 +26,7 @@ import { ExploreCollegesPage } from '../features/marketplace/pages/ExploreColleg
 import { ListingDetailsPage } from '../features/marketplace/pages/ListingDetailsPage';
 import { MarketplacePage } from '../features/marketplace/pages/MarketplacePage';
 import { MyMarketplacePage } from '../features/marketplace/pages/MyMarketplacePage';
+import { PublicSellerProfilePage } from '../features/marketplace/pages/PublicSellerProfilePage';
 import { SellItemPage } from '../features/marketplace/pages/SellItemPage';
 import { StudentShell } from '../features/student/components/StudentShell';
 import {
@@ -36,10 +37,8 @@ import {
   ReviewsPage,
   WishlistPage,
 } from '../features/student/pages/StudentActivityPages';
-import {
-  ProfilePage,
-  SettingsPage,
-} from '../features/student/pages/StudentAccountPages';
+import { SettingsPage } from '../features/student/pages/StudentAccountPages';
+import { StudentProfilePage } from '../features/student/profile/pages/StudentProfilePage';
 import { StudentDashboardPage } from '../features/student/pages/StudentDashboardPage';
 import {
   SuperAdminAdminsPage,
@@ -62,7 +61,7 @@ export const router = createBrowserRouter([
         element: <StudentShell />,
         children: [
           { path: 'student/dashboard', element: <StudentDashboardPage /> },
-          { path: 'student/profile', element: <ProfilePage /> },
+          { path: 'student/profile', element: <StudentProfilePage /> },
           { path: 'student/marketplace', element: <MarketplacePage /> },
           {
             path: 'student/explore-colleges',
@@ -77,9 +76,13 @@ export const router = createBrowserRouter([
           { path: 'student/notifications', element: <NotificationsPage /> },
           { path: 'student/settings', element: <SettingsPage /> },
           { path: 'student/chat', element: <ChatPage /> },
+          { path: 'listing/:id', element: <ListingDetailsPage /> },
+          {
+            path: 'user/public-profile/:sellerId',
+            element: <PublicSellerProfilePage />,
+          },
         ],
       },
-      { path: 'listing/:id', element: <ListingDetailsPage /> },
       {
         element: <AdminShell />,
         children: [

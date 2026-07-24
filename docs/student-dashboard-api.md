@@ -27,7 +27,8 @@ The response includes:
 - Campus Trust Score, trust level, and improvement suggestions;
 - profile completion percentage and stable missing-field keys;
 - active listing, wishlist, order, sold-item, and unread-notification counts;
-- up to eight newest active listings from the authenticated student's college;
+- up to eight newest active listings from the authenticated student's college,
+  including category, condition, price, image, seller, and trust details;
 - up to five latest notifications;
 - up to five latest activity records.
 

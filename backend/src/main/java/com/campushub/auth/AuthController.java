@@ -17,9 +17,12 @@ import com.campushub.auth.service.LoginService;
 import com.campushub.auth.service.RefreshTokenService;
 import com.campushub.auth.service.SignupService;
 import com.campushub.common.api.ApiResponse;
+import com.campushub.common.exception.UnauthorizedException;
+import com.campushub.security.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -97,5 +100,16 @@ public class AuthController {
     public ApiResponse<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
         refreshTokenService.revoke(request.refreshToken());
         return ApiResponse.success("Logout successful", null);
+    }
+
+    @PostMapping("/logout-all-devices")
+    public ApiResponse<Void> logoutAllDevices(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        if (authenticatedUser == null) {
+            throw new UnauthorizedException("Authentication is required.");
+        }
+        refreshTokenService.revokeAllForUser(authenticatedUser.userId());
+        return ApiResponse.success("Logged out from all devices successfully.", null);
     }
 }

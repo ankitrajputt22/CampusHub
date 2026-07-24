@@ -160,6 +160,10 @@ export async function login(payload: {
   return response.data.data;
 }
 
+export async function logout(refreshToken: string) {
+  await apiClient.post('/auth/logout', { refreshToken });
+}
+
 export function getApiErrorMessage(error: unknown) {
   if (
     typeof error === 'object' &&

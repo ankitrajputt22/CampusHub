@@ -35,6 +35,12 @@ public class Listing {
     @Column(nullable = false, length = 180)
     private String title;
 
+    @Column(nullable = false, length = 2000)
+    private String description;
+
+    @Column(nullable = false, length = 80)
+    private String category;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
@@ -49,6 +55,12 @@ public class Listing {
     @Column(name = "primary_image_url", length = 500)
     private String primaryImageUrl;
 
+    @Column(name = "pickup_location", nullable = false, length = 160)
+    private String pickupLocation;
+
+    @Column(nullable = false)
+    private boolean negotiable;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -61,18 +73,49 @@ public class Listing {
     public Listing(
             User seller,
             String title,
+            String category,
             BigDecimal price,
             ItemCondition condition,
             ListingStatus status,
             String primaryImageUrl
     ) {
+        this(
+                seller,
+                title,
+                "Contact the seller for more information about this item.",
+                category,
+                price,
+                condition,
+                status,
+                primaryImageUrl,
+                seller.getHostelOrCampusArea(),
+                false
+        );
+    }
+
+    public Listing(
+            User seller,
+            String title,
+            String description,
+            String category,
+            BigDecimal price,
+            ItemCondition condition,
+            ListingStatus status,
+            String primaryImageUrl,
+            String pickupLocation,
+            boolean negotiable
+    ) {
         this.seller = seller;
         this.college = seller.getCollege();
         this.title = title;
+        this.description = description;
+        this.category = category;
         this.price = price;
         this.condition = condition;
         this.status = status;
         this.primaryImageUrl = primaryImageUrl;
+        this.pickupLocation = pickupLocation;
+        this.negotiable = negotiable;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }
@@ -93,6 +136,14 @@ public class Listing {
         return title;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
     public BigDecimal getPrice() {
         return price;
     }
@@ -107,6 +158,14 @@ public class Listing {
 
     public String getPrimaryImageUrl() {
         return primaryImageUrl;
+    }
+
+    public String getPickupLocation() {
+        return pickupLocation;
+    }
+
+    public boolean isNegotiable() {
+        return negotiable;
     }
 
     public Instant getCreatedAt() {

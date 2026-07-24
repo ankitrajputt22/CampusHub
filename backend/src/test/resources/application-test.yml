@@ -21,3 +21,5 @@ app:
   otp:
     expiry-minutes: 10
     expose-dev-codes: true
+  profile-photo:
+    storage-directory: target/test-profile-photos

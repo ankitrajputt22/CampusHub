@@ -7,6 +7,7 @@ CREATE TABLE listings (
     seller_id BIGINT NOT NULL,
     college_id BIGINT NOT NULL,
     title VARCHAR(180) NOT NULL,
+    category VARCHAR(80) NOT NULL,
     price DECIMAL(12, 2) NOT NULL,
     item_condition VARCHAR(30) NOT NULL,
     status VARCHAR(30) NOT NULL,

@@ -8,5 +8,9 @@ public interface MarketplaceOrderRepository extends JpaRepository<MarketplaceOrd
 
     long countByBuyerId(Long buyerId);
 
+    long countByBuyerIdAndStatus(Long buyerId, OrderStatus status);
+
     long countBySellerIdAndStatus(Long sellerId, OrderStatus status);
+
+    boolean existsByListingIdAndStatus(Long listingId, OrderStatus status);
 }

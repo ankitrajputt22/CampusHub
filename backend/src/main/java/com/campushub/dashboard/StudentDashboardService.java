@@ -40,7 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class StudentDashboardService {
 
-    private static final int PROFILE_FIELD_COUNT = 10;
+    private static final int PROFILE_FIELD_COUNT = 11;
 
     private final UserRepository userRepository;
     private final TrustScoreRepository trustScoreRepository;
@@ -164,6 +164,7 @@ public class StudentDashboardService {
         return new ListingSummary(
                 listing.getId(),
                 listing.getTitle(),
+                listing.getCategory(),
                 listing.getPrice(),
                 displayCondition(listing.getCondition().name()),
                 listing.getPrimaryImageUrl(),
@@ -225,12 +226,12 @@ public class StudentDashboardService {
         );
         checkProfileField(missingFields, "profilePhoto", user.getProfilePhotoFileName(), this::hasText);
         checkProfileField(missingFields, "bio", user.getBio(), this::hasText);
-        boolean hasSocialProfile = hasText(user.getLinkedinUrl()) || hasText(user.getGithubUrl());
-        checkProfileField(missingFields, "linkedinOrGithub", hasSocialProfile, Boolean.TRUE::equals);
+        checkProfileField(missingFields, "linkedinUrl", user.getLinkedinUrl(), this::hasText);
+        checkProfileField(missingFields, "githubUrl", user.getGithubUrl(), this::hasText);
 
         int completedFields = PROFILE_FIELD_COUNT - missingFields.size();
         return new ProfileCompletionSummary(
-                completedFields * 100 / PROFILE_FIELD_COUNT,
+                Math.round(completedFields * 100f / PROFILE_FIELD_COUNT),
                 completedFields,
                 PROFILE_FIELD_COUNT,
                 List.copyOf(missingFields)
@@ -260,7 +261,8 @@ public class StudentDashboardService {
         if (profile.missingFields().contains("bio")) {
             suggestions.add("Add a short bio so other students know more about you.");
         }
-        if (profile.missingFields().contains("linkedinOrGithub")) {
+        if (profile.missingFields().contains("linkedinUrl")
+                && profile.missingFields().contains("githubUrl")) {
             suggestions.add("Connect a LinkedIn or GitHub profile.");
         }
         if (stats.ordersPlaced() == 0 && stats.itemsSold() == 0) {

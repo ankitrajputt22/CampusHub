@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:campushub-local;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:file:./data/campushub-local;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -17,3 +17,7 @@ app:
     jwt-secret: local-development-only-secret-change-before-production
   otp:
     expose-dev-codes: true
+  demo-data:
+    enabled: ${CAMPUSHUB_DEMO_DATA_ENABLED:false}
+    password: ${CAMPUSHUB_DEMO_DATA_PASSWORD:}
+    college-code: ${CAMPUSHUB_DEMO_DATA_COLLEGE_CODE:RECMAINPURI}

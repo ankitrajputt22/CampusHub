@@ -2,9 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .filter-label {
+    @apply text-[11px] font-bold uppercase tracking-[0.12em] text-[#5d6a7c];
+  }
+
+  .filter-control {
+    @apply h-10 w-full rounded-lg border border-[#d1d7e0] bg-white px-3 text-sm text-[#263a52] outline-none placeholder:text-[#8a94a3] focus:border-[#007b95] focus:ring-2 focus:ring-cyan-100;
+  }
+}
+
 :root {
-  color: #172033;
-  background: #f8fafc;
+  color: #0b1c30;
+  background: #f8f9ff;
   font-family:
     Inter,
     ui-sans-serif,
@@ -19,7 +29,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #f8f9ff;
 }
 
 button,
@@ -35,6 +45,58 @@ a {
   transition-property:
     color, background-color, border-color, box-shadow, transform;
   transition-duration: 150ms;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgb(0 204 249 / 35%);
+  outline-offset: 2px;
+}
+
+.dashboard-product-visual {
+  background:
+    radial-gradient(
+      circle at 78% 20%,
+      rgb(255 255 255 / 65%) 0 12%,
+      transparent 13%
+    ),
+    linear-gradient(145deg, #eff4ff 0%, #d3e4fe 55%, #b7eaff 100%);
+}
+
+.dashboard-product-visual::after {
+  position: absolute;
+  right: -18%;
+  bottom: -42%;
+  width: 78%;
+  height: 78%;
+  content: '';
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 35%);
+}
+
+.marketplace-product-visual::before,
+.marketplace-product-visual::after {
+  position: absolute;
+  content: '';
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 32%);
+}
+
+.marketplace-product-visual::before {
+  top: -22%;
+  right: -10%;
+  width: 55%;
+  height: 55%;
+}
+
+.marketplace-product-visual::after {
+  bottom: -30%;
+  left: -12%;
+  width: 68%;
+  height: 68%;
 }
 
 ::selection {

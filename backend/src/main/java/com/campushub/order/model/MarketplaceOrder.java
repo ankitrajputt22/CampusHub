@@ -56,4 +56,28 @@ public class MarketplaceOrder {
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Listing getListing() {
+        return listing;
+    }
+
+    public User getBuyer() {
+        return buyer;
+    }
+
+    public User getSeller() {
+        return seller;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

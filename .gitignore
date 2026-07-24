@@ -10,6 +10,7 @@ frontend/.vite/
 
 # Backend build
 backend/target/
+backend/data/
 
 # Logs
 *.log

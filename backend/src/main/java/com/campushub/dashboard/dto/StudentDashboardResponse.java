@@ -61,6 +61,7 @@ public record StudentDashboardResponse(
     public record ListingSummary(
             Long id,
             String title,
+            String category,
             BigDecimal price,
             String condition,
             String imageUrl,

@@ -5,5 +5,7 @@ public enum ListingStatus {
     RESERVED,
     SOLD,
     INACTIVE,
+    UNDER_REVIEW,
+    BLOCKED,
     DELETED
 }

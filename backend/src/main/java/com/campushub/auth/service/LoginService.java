@@ -109,6 +109,11 @@ public class LoginService {
             throw new UnauthorizedException("Your account verification is incomplete. Please complete OTP verification.");
         }
 
+        if (user.getStatus() == AccountStatus.DEACTIVATION_REQUESTED) {
+            recordAttempt(email, ipAddress, userAgent, false, "DEACTIVATION_REQUESTED");
+            throw new UnauthorizedException("Your account deactivation request is being reviewed.");
+        }
+
         if (!user.isEmailVerified()) {
             recordAttempt(email, ipAddress, userAgent, false, "EMAIL_NOT_VERIFIED");
             throw new UnauthorizedException("Your college email is not verified. Please verify your email to continue.");

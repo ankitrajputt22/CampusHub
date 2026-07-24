@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 import { getApiErrorMessage, login } from '../api/authApi';
 import { AuthShowcase } from '../components/AuthShowcase';
+import { saveCampusSession } from '../../student/lib/session';
 
 const loginSchema = z.object({
   email: z
@@ -56,18 +57,7 @@ export function LoginPage() {
     setServerMessage('');
     try {
       const response = await login(values);
-      window.localStorage.setItem(
-        'campusHub.auth.accessToken',
-        response.accessToken,
-      );
-      window.localStorage.setItem(
-        'campusHub.auth.refreshToken',
-        response.refreshToken,
-      );
-      window.localStorage.setItem(
-        'campusHub.auth.user',
-        JSON.stringify(response.user),
-      );
+      saveCampusSession(response);
 
       const redirectFromState =
         typeof location.state === 'object' &&

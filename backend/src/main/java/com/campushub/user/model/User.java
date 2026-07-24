@@ -65,6 +65,9 @@ public class User {
     @Column(name = "profile_photo_file_name", length = 255)
     private String profilePhotoFileName;
 
+    @Column(name = "profile_photo_url", length = 500)
+    private String profilePhotoUrl;
+
     @Column(length = 500)
     private String bio;
 
@@ -196,6 +199,10 @@ public class User {
         return profilePhotoFileName;
     }
 
+    public String getProfilePhotoUrl() {
+        return profilePhotoUrl;
+    }
+
     public String getBio() {
         return bio;
     }
@@ -208,6 +215,10 @@ public class User {
         return githubUrl;
     }
 
+    public String getRollNumber() {
+        return rollNumber;
+    }
+
     public College getCollege() {
         return college;
     }
@@ -218,6 +229,10 @@ public class User {
 
     public UserRole getRole() {
         return role;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
     public boolean isEmailVerified() {
@@ -256,5 +271,47 @@ public class User {
         this.accountLockedUntil = null;
         this.lastLoginAt = Instant.now();
         this.updatedAt = this.lastLoginAt;
+    }
+
+    public void updateEditableProfile(
+            String fullName,
+            String bio,
+            String hostelOrCampusArea,
+            String department,
+            String course,
+            String yearOfStudy,
+            String rollNumber,
+            String linkedinUrl,
+            String githubUrl
+    ) {
+        this.fullName = fullName;
+        this.bio = bio;
+        this.hostelOrCampusArea = hostelOrCampusArea;
+        this.department = department;
+        this.customDepartment = null;
+        this.course = course;
+        this.customCourse = null;
+        this.yearOfStudy = yearOfStudy;
+        this.customYearOfStudy = null;
+        this.rollNumber = rollNumber;
+        this.linkedinUrl = linkedinUrl;
+        this.githubUrl = githubUrl;
+        this.updatedAt = Instant.now();
+    }
+
+    public void updateProfilePhoto(String profilePhotoUrl, String profilePhotoFileName) {
+        this.profilePhotoUrl = profilePhotoUrl;
+        this.profilePhotoFileName = profilePhotoFileName;
+        this.updatedAt = Instant.now();
+    }
+
+    public void changePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+        this.updatedAt = Instant.now();
+    }
+
+    public void requestDeactivation() {
+        this.status = AccountStatus.DEACTIVATION_REQUESTED;
+        this.updatedAt = Instant.now();
     }
 }

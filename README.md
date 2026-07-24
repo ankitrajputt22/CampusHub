@@ -1,6 +1,6 @@
 # Campus Hub
 
-Campus Hub is a secure multi-college student marketplace. The repository currently includes working signup and login foundations plus a frontend-only product prototype for the remaining student, admin, super-admin, and policy pages. Prototype marketplace actions use local mock state until their backend modules are implemented.
+Campus Hub is a secure multi-college student marketplace. The repository includes working signup, OTP verification, login, session refresh/logout, and backend-connected student dashboard and profile pages. Remaining marketplace, admin, super-admin, and policy pages are product prototypes until their backend modules are implemented.
 
 ## Project Structure
 
@@ -46,7 +46,8 @@ Prototype entry points:
 ```text
 /login                       Working backend-connected login
 /signup                      Working backend-connected signup and OTP flow
-/student/dashboard           Student workspace and marketplace navigation
+/student/dashboard           Backend-connected student dashboard
+/student/profile             Backend-connected student profile and privacy controls
 /student/marketplace         Searchable mock college marketplace
 /admin/dashboard             College administration workspace
 /super-admin/dashboard       Platform administration workspace
