@@ -25,6 +25,7 @@ const product: ProductDetails = {
   id: 41,
   title: 'Casio scientific calculator',
   description: 'Lightly used calculator with its cover and manual.',
+  additionalNotes: 'Inspect the calculator before campus handover.',
   category: 'Electronics',
   price: 1850,
   condition: 'LIKE_NEW',
@@ -136,6 +137,9 @@ describe('ListingDetailsPage', () => {
     );
     expect(screen.getByText('Verified college listing')).toBeInTheDocument();
     expect(screen.getByText('Campus pickup')).toBeInTheDocument();
+    expect(
+      screen.getByText('Inspect the calculator before campus handover.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Engineering drawing kit')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'View seller profile' }),

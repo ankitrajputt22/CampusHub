@@ -16,6 +16,16 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItem, Long
 
     Optional<WishlistItem> findByUserIdAndListingId(Long userId, Long listingId);
 
+    long countByListingId(Long listingId);
+
+    @Query("""
+            select count(item)
+            from WishlistItem item
+            where item.listing.seller.id = :sellerId
+              and item.listing.status <> com.campushub.listing.model.ListingStatus.DELETED
+            """)
+    long countSellerListingSaves(@Param("sellerId") Long sellerId);
+
     @Query("""
             select item.listing.id
             from WishlistItem item

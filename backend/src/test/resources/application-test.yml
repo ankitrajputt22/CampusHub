@@ -23,3 +23,5 @@ app:
     expose-dev-codes: true
   profile-photo:
     storage-directory: target/test-profile-photos
+  listing-image:
+    storage-directory: target/test-listing-images

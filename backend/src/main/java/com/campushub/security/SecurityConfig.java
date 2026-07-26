@@ -38,7 +38,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/colleges/search").permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/user/profile/photo/content/**"
+                                "/api/user/profile/photo/content/**",
+                                "/api/listings/images/**"
                         ).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()

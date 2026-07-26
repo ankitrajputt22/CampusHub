@@ -61,6 +61,15 @@ public class Listing {
     @Column(nullable = false)
     private boolean negotiable;
 
+    @Column(name = "available_quantity", nullable = false)
+    private int availableQuantity;
+
+    @Column(name = "additional_notes", length = 500)
+    private String additionalNotes;
+
+    @Column(name = "view_count", nullable = false)
+    private long viewCount;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -89,7 +98,9 @@ public class Listing {
                 status,
                 primaryImageUrl,
                 seller.getHostelOrCampusArea(),
-                false
+                false,
+                1,
+                null
         );
     }
 
@@ -105,6 +116,36 @@ public class Listing {
             String pickupLocation,
             boolean negotiable
     ) {
+        this(
+                seller,
+                title,
+                description,
+                category,
+                price,
+                condition,
+                status,
+                primaryImageUrl,
+                pickupLocation,
+                negotiable,
+                1,
+                null
+        );
+    }
+
+    public Listing(
+            User seller,
+            String title,
+            String description,
+            String category,
+            BigDecimal price,
+            ItemCondition condition,
+            ListingStatus status,
+            String primaryImageUrl,
+            String pickupLocation,
+            boolean negotiable,
+            int availableQuantity,
+            String additionalNotes
+    ) {
         this.seller = seller;
         this.college = seller.getCollege();
         this.title = title;
@@ -116,6 +157,9 @@ public class Listing {
         this.primaryImageUrl = primaryImageUrl;
         this.pickupLocation = pickupLocation;
         this.negotiable = negotiable;
+        this.availableQuantity = availableQuantity;
+        this.additionalNotes = additionalNotes;
+        this.viewCount = 0;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }
@@ -168,7 +212,60 @@ public class Listing {
         return negotiable;
     }
 
+    public int getAvailableQuantity() {
+        return availableQuantity;
+    }
+
+    public String getAdditionalNotes() {
+        return additionalNotes;
+    }
+
+    public long getViewCount() {
+        return viewCount;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void updatePrimaryImageUrl(String primaryImageUrl) {
+        this.primaryImageUrl = primaryImageUrl;
+        this.updatedAt = Instant.now();
+    }
+
+    public void updateDetails(
+            String title,
+            String description,
+            String category,
+            BigDecimal price,
+            ItemCondition condition,
+            String pickupLocation,
+            boolean negotiable,
+            int availableQuantity,
+            String additionalNotes
+    ) {
+        this.title = title;
+        this.description = description;
+        this.category = category;
+        this.price = price;
+        this.condition = condition;
+        this.pickupLocation = pickupLocation;
+        this.negotiable = negotiable;
+        this.availableQuantity = availableQuantity;
+        this.additionalNotes = additionalNotes;
+        this.updatedAt = Instant.now();
+    }
+
+    public void changeStatus(ListingStatus status) {
+        this.status = status;
+        this.updatedAt = Instant.now();
+    }
+
+    public void recordView() {
+        this.viewCount++;
     }
 }

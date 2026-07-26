@@ -21,7 +21,20 @@ public interface ListingRepository
 
     long countBySellerIdAndStatus(Long sellerId, ListingStatus status);
 
+    long countBySellerIdAndStatusNot(Long sellerId, ListingStatus status);
+
     boolean existsBySellerIdAndTitleIgnoreCase(Long sellerId, String title);
+
+    @Query("""
+            select coalesce(sum(listing.viewCount), 0)
+            from Listing listing
+            where listing.seller.id = :sellerId
+              and listing.status <> :excludedStatus
+            """)
+    long sumViewsBySellerIdExcludingStatus(
+            @Param("sellerId") Long sellerId,
+            @Param("excludedStatus") ListingStatus excludedStatus
+    );
 
     @EntityGraph(attributePaths = "seller")
     List<Listing> findTop8ByCollegeIdAndStatusOrderByCreatedAtDesc(

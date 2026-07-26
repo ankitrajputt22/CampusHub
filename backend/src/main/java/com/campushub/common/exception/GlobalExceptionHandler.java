@@ -79,7 +79,10 @@ public class GlobalExceptionHandler {
     ) {
         return ResponseEntity
                 .badRequest()
-                .body(ApiResponse.failure("Profile photo size should be less than 2 MB.", null));
+                .body(ApiResponse.failure(
+                        "The upload is too large. Each image must be less than 2 MB.",
+                        null
+                ));
     }
 
     @ExceptionHandler(Exception.class)

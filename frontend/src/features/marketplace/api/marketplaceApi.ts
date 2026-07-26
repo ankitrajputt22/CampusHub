@@ -37,6 +37,7 @@ export type ProductSeller = MarketplaceSeller & {
 
 export type ProductDetails = Omit<MarketplaceListing, 'seller'> & {
   seller: ProductSeller;
+  additionalNotes?: string | null;
   availableQuantity: number;
   status: string;
   college: {
@@ -87,6 +88,55 @@ type ApiEnvelope<T> = {
   message: string;
   data: T;
 };
+
+export type CreateListingPayload = {
+  title: string;
+  category: string;
+  description: string;
+  price: number;
+  condition: string;
+  pickupLocation: string;
+  negotiable: boolean;
+  availableQuantity: number;
+  additionalNotes: string | null;
+};
+
+export type CreatedListing = {
+  id: number;
+  title: string;
+  price: number;
+  category: string;
+  condition: string;
+  pickupLocation: string;
+  negotiable: boolean;
+  availableQuantity: number;
+  status: 'ACTIVE';
+  collegeName: string;
+  sellerName: string;
+  images: string[];
+  createdAt: string;
+};
+
+export async function createMarketplaceListing(
+  payload: CreateListingPayload,
+  images: File[],
+) {
+  const body = new FormData();
+  body.append(
+    'listing',
+    new Blob([JSON.stringify(payload)], { type: 'application/json' }),
+  );
+  images.forEach((image) => body.append('images', image));
+
+  const response = await apiClient.post<ApiEnvelope<CreatedListing>>(
+    '/listings',
+    body,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  );
+  return response.data.data;
+}
 
 export async function getMyCollegeMarketplace(
   query: MarketplaceQuery,

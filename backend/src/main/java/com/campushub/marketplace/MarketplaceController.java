@@ -3,15 +3,23 @@ package com.campushub.marketplace;
 import com.campushub.common.api.ApiResponse;
 import com.campushub.common.exception.UnauthorizedException;
 import com.campushub.marketplace.dto.CollegeMarketplaceResponse;
+import com.campushub.marketplace.dto.CreateListingRequest;
+import com.campushub.marketplace.dto.CreatedListingResponse;
 import com.campushub.marketplace.dto.ProductDetailsResponse;
 import com.campushub.security.AuthenticatedUser;
+import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/listings")
@@ -67,6 +75,22 @@ public class MarketplaceController {
         return ApiResponse.success(
                 "Marketplace listing loaded successfully",
                 marketplaceService.getListing(userId(authenticatedUser), listingId)
+        );
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<CreatedListingResponse> createListing(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @Valid @RequestPart("listing") CreateListingRequest request,
+            @RequestPart("images") List<MultipartFile> images
+    ) {
+        return ApiResponse.success(
+                "Listing created successfully",
+                marketplaceService.createListing(
+                        userId(authenticatedUser),
+                        request,
+                        images
+                )
         );
     }
 

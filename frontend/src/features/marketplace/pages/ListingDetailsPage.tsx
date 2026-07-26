@@ -230,6 +230,16 @@ export function ListingDetailsPage() {
             <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#5b697b]">
               {product.description}
             </p>
+            {product.additionalNotes && (
+              <div className="mt-5 rounded-xl border border-[#dbe4f0] bg-[#f8faff] px-4 py-3">
+                <h3 className="text-xs font-black uppercase tracking-[0.1em] text-[#40546d]">
+                  Additional notes
+                </h3>
+                <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#5b697b]">
+                  {product.additionalNotes}
+                </p>
+              </div>
+            )}
             <div
               aria-label="Listing assurances"
               className="mt-5 flex flex-wrap gap-2"

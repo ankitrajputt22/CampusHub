@@ -8,6 +8,7 @@ public record ProductDetailsResponse(
         Long id,
         String title,
         String description,
+        String additionalNotes,
         BigDecimal price,
         String category,
         String condition,

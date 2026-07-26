@@ -7,7 +7,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 2MB
-      max-request-size: 3MB
+      max-request-size: 11MB
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/campus_hub?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
     username: ${SPRING_DATASOURCE_USERNAME:campus_hub}
@@ -45,3 +45,5 @@ app:
     expose-dev-codes: ${OTP_EXPOSE_DEV_CODES:true}
   profile-photo:
     storage-directory: ${PROFILE_PHOTO_STORAGE_DIRECTORY:./data/profile-photos}
+  listing-image:
+    storage-directory: ${LISTING_IMAGE_STORAGE_DIRECTORY:./data/listing-images}

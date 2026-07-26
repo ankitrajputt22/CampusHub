@@ -3,13 +3,19 @@ package com.campushub.marketplace;
 import com.campushub.common.exception.BadRequestException;
 import com.campushub.common.exception.ForbiddenException;
 import com.campushub.common.exception.ResourceNotFoundException;
+import com.campushub.listing.image.ListingImageStorage;
+import com.campushub.listing.image.StoredListingImage;
 import com.campushub.listing.model.ItemCondition;
 import com.campushub.listing.model.Listing;
+import com.campushub.listing.model.ListingImage;
 import com.campushub.listing.model.ListingStatus;
+import com.campushub.listing.repository.ListingImageRepository;
 import com.campushub.listing.repository.ListingRepository;
 import com.campushub.marketplace.dto.CollegeMarketplaceResponse;
 import com.campushub.marketplace.dto.CollegeMarketplaceResponse.CollegeSummary;
 import com.campushub.marketplace.dto.CollegeMarketplaceResponse.PaginationSummary;
+import com.campushub.marketplace.dto.CreateListingRequest;
+import com.campushub.marketplace.dto.CreatedListingResponse;
 import com.campushub.marketplace.dto.MarketplaceListingResponse;
 import com.campushub.marketplace.dto.MarketplaceListingResponse.SellerSummary;
 import com.campushub.marketplace.dto.ProductDetailsResponse;
@@ -39,6 +45,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,15 +53,44 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class MarketplaceService {
 
     private static final int DEFAULT_PAGE_SIZE = 12;
     private static final int MAX_PAGE_SIZE = 24;
+    private static final int MAX_LISTING_IMAGES = 5;
+    private static final Set<String> CATEGORIES = Set.of(
+            "Books",
+            "Notes",
+            "Electronics",
+            "Bicycles",
+            "Hostel Essentials",
+            "Furniture",
+            "Lab Equipment",
+            "Stationery",
+            "Clothing",
+            "Others"
+    );
+    private static final List<String> PROHIBITED_TERMS = List.of(
+            "alcohol",
+            "drug",
+            "drugs",
+            "weapon",
+            "weapons",
+            "stolen",
+            "counterfeit",
+            "explosive",
+            "explosives",
+            "adult product",
+            "adult products"
+    );
 
     private final UserRepository userRepository;
     private final ListingRepository listingRepository;
+    private final ListingImageRepository listingImageRepository;
+    private final ListingImageStorage listingImageStorage;
     private final WishlistItemRepository wishlistRepository;
     private final TrustScoreRepository trustScoreRepository;
     private final ProfilePrivacySettingsRepository privacyRepository;
@@ -64,6 +100,8 @@ public class MarketplaceService {
     public MarketplaceService(
             UserRepository userRepository,
             ListingRepository listingRepository,
+            ListingImageRepository listingImageRepository,
+            ListingImageStorage listingImageStorage,
             WishlistItemRepository wishlistRepository,
             TrustScoreRepository trustScoreRepository,
             ProfilePrivacySettingsRepository privacyRepository,
@@ -72,11 +110,83 @@ public class MarketplaceService {
     ) {
         this.userRepository = userRepository;
         this.listingRepository = listingRepository;
+        this.listingImageRepository = listingImageRepository;
+        this.listingImageStorage = listingImageStorage;
         this.wishlistRepository = wishlistRepository;
         this.trustScoreRepository = trustScoreRepository;
         this.privacyRepository = privacyRepository;
         this.reviewRepository = reviewRepository;
         this.orderRepository = orderRepository;
+    }
+
+    @Transactional
+    public CreatedListingResponse createListing(
+            Long authenticatedUserId,
+            CreateListingRequest request,
+            List<MultipartFile> images
+    ) {
+        User seller = loadActiveStudent(authenticatedUserId);
+        if (!isVerifiedStudent(seller)) {
+            throw new ForbiddenException(
+                    "Email and phone verification are required before selling an item."
+            );
+        }
+        validateCreateRequest(request, images);
+
+        Listing listing = listingRepository.saveAndFlush(new Listing(
+                seller,
+                request.title().trim(),
+                request.description().trim(),
+                request.category().trim(),
+                request.price(),
+                parseCondition(request.condition()),
+                ListingStatus.ACTIVE,
+                null,
+                request.pickupLocation().trim(),
+                request.negotiable(),
+                request.availableQuantity(),
+                normalize(request.additionalNotes())
+        ));
+        List<StoredListingImage> storedImages = new ArrayList<>();
+
+        try {
+            for (int index = 0; index < images.size(); index++) {
+                StoredListingImage stored = listingImageStorage.store(
+                        listing.getId(),
+                        images.get(index)
+                );
+                storedImages.add(stored);
+                listingImageRepository.save(new ListingImage(
+                        listing,
+                        stored.publicUrl(),
+                        stored.fileName(),
+                        index
+                ));
+            }
+            listing.updatePrimaryImageUrl(storedImages.getFirst().publicUrl());
+            listingRepository.save(listing);
+            listingImageRepository.flush();
+            listingRepository.flush();
+        } catch (RuntimeException exception) {
+            storedImages.forEach(image -> listingImageStorage.delete(image.fileName()));
+            throw exception;
+        }
+
+        return new CreatedListingResponse(
+                listing.getId(),
+                listing.getTitle(),
+                listing.getPrice(),
+                listing.getCategory(),
+                listing.getCondition().name(),
+                listing.getPickupLocation(),
+                listing.isNegotiable(),
+                listing.getAvailableQuantity(),
+                listing.getStatus().name(),
+                seller.getCollege().getName(),
+                seller.getFullName(),
+                storedImages.stream().map(StoredListingImage::publicUrl).toList(),
+                listing.getCreatedAt()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -188,17 +298,26 @@ public class MarketplaceService {
                         listing.getId(),
                         AccountStatus.ACTIVE
                 );
+        List<String> imageUrls = listingImageRepository
+                .findAllByListingIdOrderByDisplayOrderAsc(listing.getId())
+                .stream()
+                .map(ListingImage::getImageUrl)
+                .toList();
+        if (imageUrls.isEmpty() && hasText(listing.getPrimaryImageUrl())) {
+            imageUrls = List.of(listing.getPrimaryImageUrl());
+        }
 
         return new ProductDetailsResponse(
                 listing.getId(),
                 listing.getTitle(),
                 listing.getDescription(),
+                listing.getAdditionalNotes(),
                 listing.getPrice(),
                 listing.getCategory(),
                 listing.getCondition().name(),
                 listing.getPickupLocation(),
                 listing.isNegotiable(),
-                active ? 1 : 0,
+                active ? listing.getAvailableQuantity() : 0,
                 listing.getStatus().name(),
                 listing.getCreatedAt(),
                 new ProductDetailsResponse.CollegeSummary(
@@ -206,9 +325,7 @@ public class MarketplaceService {
                         listing.getCollege().getName(),
                         listing.getCollege().getCode()
                 ),
-                hasText(listing.getPrimaryImageUrl())
-                        ? List.of(listing.getPrimaryImageUrl())
-                        : List.of(),
+                imageUrls,
                 new SellerDetails(
                         seller.getId(),
                         seller.getFullName(),
@@ -414,6 +531,45 @@ public class MarketplaceService {
         }
         if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
             throw new BadRequestException("Minimum price cannot be greater than maximum price.");
+        }
+    }
+
+    private void validateCreateRequest(
+            CreateListingRequest request,
+            List<MultipartFile> images
+    ) {
+        if (!CATEGORIES.contains(request.category().trim())) {
+            throw new BadRequestException("Please select a supported listing category.");
+        }
+        if (images == null || images.isEmpty()) {
+            throw new BadRequestException("At least one product image is required.");
+        }
+        if (images.size() > MAX_LISTING_IMAGES) {
+            throw new BadRequestException("A listing can contain at most 5 images.");
+        }
+        validateAllowedContent(
+                request.title(),
+                request.description(),
+                request.additionalNotes()
+        );
+    }
+
+    private void validateAllowedContent(String... values) {
+        String content = String.join(
+                " ",
+                java.util.Arrays.stream(values)
+                        .filter(value -> value != null && !value.isBlank())
+                        .toList()
+        ).toLowerCase(Locale.ROOT);
+        for (String term : PROHIBITED_TERMS) {
+            Pattern pattern = Pattern.compile(
+                    "(?<![a-z0-9])" + Pattern.quote(term) + "(?![a-z0-9])"
+            );
+            if (pattern.matcher(content).find()) {
+                throw new BadRequestException(
+                        "This listing appears to contain a prohibited item."
+                );
+            }
         }
     }
 

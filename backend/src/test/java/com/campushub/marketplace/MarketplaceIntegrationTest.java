@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -29,6 +30,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -56,6 +58,117 @@ class MarketplaceIntegrationTest {
 
     @Autowired
     private WishlistItemRepository wishlistRepository;
+
+    @Test
+    void createsAListingForTheAuthenticatedStudentsVerifiedCollege() throws Exception {
+        AuthSession seller = createVerifiedStudent(
+                "Verified Listing Seller",
+                1L,
+                "listing.creator@iitd.ac.in",
+                "+919800001031"
+        );
+        Map<String, Object> request = Map.ofEntries(
+                Map.entry("title", "Casio scientific calculator"),
+                Map.entry(
+                        "description",
+                        "Used for one semester and working properly with its original cover."
+                ),
+                Map.entry("category", "Electronics"),
+                Map.entry("price", 850),
+                Map.entry("condition", "LIKE_NEW"),
+                Map.entry("pickupLocation", "Central Library Gate"),
+                Map.entry("negotiable", true),
+                Map.entry("availableQuantity", 2),
+                Map.entry("additionalNotes", "Please inspect the calculator before handover.")
+        );
+        MockMultipartFile listingPart = new MockMultipartFile(
+                "listing",
+                "",
+                MediaType.APPLICATION_JSON_VALUE,
+                objectMapper.writeValueAsBytes(request)
+        );
+        MockMultipartFile coverImage = new MockMultipartFile(
+                "images",
+                "calculator-cover.png",
+                MediaType.IMAGE_PNG_VALUE,
+                new byte[]{
+                        (byte) 0x89,
+                        0x50,
+                        0x4e,
+                        0x47,
+                        0x0d,
+                        0x0a,
+                        0x1a,
+                        0x0a,
+                        0x00
+                }
+        );
+        MockMultipartFile secondImage = new MockMultipartFile(
+                "images",
+                "calculator-back.webp",
+                "image/webp",
+                new byte[]{
+                        'R', 'I', 'F', 'F',
+                        0x04, 0x00, 0x00, 0x00,
+                        'W', 'E', 'B', 'P'
+                }
+        );
+
+        MvcResult createResult = mockMvc.perform(multipart("/api/listings")
+                        .file(listingPart)
+                        .file(coverImage)
+                        .file(secondImage)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + seller.accessToken())
+                        .param("collegeId", "2")
+                        .param("sellerId", "999"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", is("Listing created successfully")))
+                .andExpect(jsonPath("$.data.title", is("Casio scientific calculator")))
+                .andExpect(jsonPath("$.data.status", is("ACTIVE")))
+                .andExpect(jsonPath("$.data.collegeName", is("IIT Delhi")))
+                .andExpect(jsonPath("$.data.sellerName", is("Verified Listing Seller")))
+                .andExpect(jsonPath("$.data.availableQuantity", is(2)))
+                .andExpect(jsonPath("$.data.images", hasSize(2)))
+                .andReturn();
+
+        long listingId = objectMapper
+                .readTree(createResult.getResponse().getContentAsString())
+                .get("data")
+                .get("id")
+                .asLong();
+        String coverImageUrl = objectMapper
+                .readTree(createResult.getResponse().getContentAsString())
+                .get("data")
+                .get("images")
+                .get(0)
+                .asText();
+        Listing listing = listingRepository.findMarketplaceListingById(listingId)
+                .orElseThrow();
+        org.junit.jupiter.api.Assertions.assertEquals(
+                seller.userId(),
+                listing.getSeller().getId()
+        );
+        org.junit.jupiter.api.Assertions.assertEquals(1L, listing.getCollege().getId());
+        org.junit.jupiter.api.Assertions.assertEquals(2, listing.getAvailableQuantity());
+
+        mockMvc.perform(get("/api/listings/{listingId}", listingId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + seller.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.additionalNotes", is(
+                        "Please inspect the calculator before handover."
+                )))
+                .andExpect(jsonPath("$.data.availableQuantity", is(2)))
+                .andExpect(jsonPath("$.data.images", hasSize(2)))
+                .andExpect(jsonPath("$.data.images[0]").value(
+                        org.hamcrest.Matchers.startsWith("/api/listings/images/")
+                ));
+
+        mockMvc.perform(get(coverImageUrl))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .content()
+                        .contentType(MediaType.IMAGE_PNG));
+    }
 
     @Test
     void returnsOnlyActiveListingsFromTheAuthenticatedStudentsCollege() throws Exception {
