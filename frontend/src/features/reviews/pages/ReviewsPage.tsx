@@ -1,5 +1,6 @@
 import {
   CheckCircle2,
+  Flag,
   Inbox,
   LoaderCircle,
   MessageSquareText,
@@ -13,6 +14,12 @@ import { Link } from 'react-router-dom';
 
 import { getApiErrorMessage } from '../../auth/api/authApi';
 import { relativeNotificationTime } from '../../notifications/lib/notificationFormat';
+import {
+  reportReview,
+  type ReportReason,
+  type ReviewReportReason,
+} from '../../reports/api/reportsApi';
+import { ReportEntityModal } from '../../reports/components/ReportEntityModal';
 import { PageHeader } from '../../student/components/StudentUi';
 import { getReviewWorkspace, submitOrderReview } from '../api/reviewsApi';
 import type {
@@ -29,6 +36,7 @@ export function ReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [reportingReview, setReportingReview] = useState<ReviewItem>();
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -54,6 +62,20 @@ export function ReviewsPage() {
       'Review submitted successfully. Thank you for helping campus trust.',
     );
     await load();
+  }
+
+  async function submitReport(reason: ReportReason, description: string) {
+    if (!reportingReview) return;
+    try {
+      await reportReview(
+        reportingReview.id,
+        reason as ReviewReportReason,
+        description,
+      );
+      setNotice('Review report submitted. Track updates in My Reports.');
+    } catch (caught) {
+      throw new Error(getApiErrorMessage(caught));
+    }
   }
 
   if (loading && !workspace) return <ReviewsLoading />;
@@ -160,6 +182,7 @@ export function ReviewsPage() {
           (workspace.receivedReviews.length ? (
             <ReviewHistory
               items={workspace.receivedReviews}
+              onReport={setReportingReview}
               perspective="received"
             />
           ) : (
@@ -178,6 +201,17 @@ export function ReviewsPage() {
             />
           ))}
       </section>
+      <ReportEntityModal
+        onClose={() => setReportingReview(undefined)}
+        onSubmit={submitReport}
+        open={Boolean(reportingReview)}
+        targetName={
+          reportingReview
+            ? `${reportingReview.reviewerName}: “${reportingReview.message}”`
+            : ''
+        }
+        type="REVIEW"
+      />
     </div>
   );
 }
@@ -301,9 +335,11 @@ function PendingReviewCard({
 function ReviewHistory({
   items,
   perspective,
+  onReport,
 }: {
   items: ReviewItem[];
   perspective: 'received' | 'given';
+  onReport?: (review: ReviewItem) => void;
 }) {
   return (
     <div className="divide-y divide-[#edf0f4]">
@@ -324,21 +360,34 @@ function ReviewHistory({
                 · {review.orderNumber}
               </p>
             </div>
-            <div
-              aria-label={`${review.rating} out of 5 stars`}
-              className="flex shrink-0 gap-0.5"
-            >
-              {[1, 2, 3, 4, 5].map((value) => (
-                <Star
-                  aria-hidden="true"
-                  className={`h-4 w-4 ${
-                    value <= review.rating
-                      ? 'fill-amber-400 text-amber-400'
-                      : 'text-[#d5dbe3]'
-                  }`}
-                  key={value}
-                />
-              ))}
+            <div className="flex shrink-0 items-center gap-3">
+              <div
+                aria-label={`${review.rating} out of 5 stars`}
+                className="flex gap-0.5"
+              >
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <Star
+                    aria-hidden="true"
+                    className={`h-4 w-4 ${
+                      value <= review.rating
+                        ? 'fill-amber-400 text-amber-400'
+                        : 'text-[#d5dbe3]'
+                    }`}
+                    key={value}
+                  />
+                ))}
+              </div>
+              {onReport && (
+                <button
+                  aria-label={`Report review from ${review.reviewerName}`}
+                  className="rounded-lg p-2 text-[#7d8795] hover:bg-rose-50 hover:text-rose-700"
+                  onClick={() => onReport(review)}
+                  title="Report review"
+                  type="button"
+                >
+                  <Flag aria-hidden="true" className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
           <p className="mt-3 text-sm leading-6 text-[#526174]">

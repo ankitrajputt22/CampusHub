@@ -356,6 +356,7 @@ public class NotificationService {
                 || value.equals("/student/profile")
                 || value.equals("/student/wishlist")
                 || value.equals("/student/my-marketplace")
+                || value.equals("/student/reports")
                 || value.equals("/student/notifications")) {
             return value;
         }

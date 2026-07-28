@@ -15,6 +15,7 @@ import type {
   CampusNotification,
   NotificationType,
 } from '../api/notificationsApi';
+import { isAllowedNotificationAction } from '../api/notificationsApi';
 import {
   notificationActionLabel,
   notificationTypeLabel,
@@ -115,7 +116,7 @@ export function NotificationCard({
       </div>
 
       <div className="flex items-center gap-2 sm:self-center">
-        {notification.actionUrl && (
+        {isAllowedNotificationAction(notification.actionUrl) && (
           <button
             className="inline-flex h-9 items-center justify-center rounded-lg bg-[#031635] px-3 text-xs font-bold text-white hover:bg-[#17385e] disabled:opacity-60"
             disabled={updating}

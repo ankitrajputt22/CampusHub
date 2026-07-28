@@ -6,7 +6,9 @@ import type { ListingReportReason } from '../api/marketplaceApi';
 const reasons: { value: ListingReportReason; label: string }[] = [
   { value: 'FAKE_LISTING', label: 'Fake listing' },
   { value: 'WRONG_PRODUCT_DETAILS', label: 'Wrong product details' },
+  { value: 'MISLEADING_IMAGES', label: 'Misleading images' },
   { value: 'SUSPICIOUS_SELLER', label: 'Suspicious seller' },
+  { value: 'STOLEN_ITEM_SUSPICION', label: 'Suspected stolen item' },
   { value: 'PROHIBITED_ITEM', label: 'Prohibited item' },
   { value: 'ABUSIVE_CONTENT', label: 'Abusive content' },
   { value: 'DUPLICATE_LISTING', label: 'Duplicate listing' },
@@ -132,13 +134,13 @@ export function ReportListingModal({
           </span>
           <textarea
             className="mt-2 min-h-28 w-full resize-y rounded-xl border border-[#cbd3de] p-3 text-sm outline-none focus:border-[#007b95] focus:ring-2 focus:ring-cyan-100"
-            maxLength={1000}
+            maxLength={500}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Briefly explain what seems wrong or unsafe."
             value={description}
           />
           <span className="mt-1 block text-right text-xs text-[#8490a0]">
-            {description.length}/1000
+            {description.length}/500
           </span>
         </label>
 

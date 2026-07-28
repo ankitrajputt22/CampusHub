@@ -78,6 +78,17 @@ export function hasStudentSession() {
   );
 }
 
+export function hasAdminSession() {
+  const user = getStoredCampusUser();
+  return Boolean(
+    getAccessToken() &&
+    getRefreshToken() &&
+    user &&
+    (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') &&
+    user.accountStatus === 'ACTIVE',
+  );
+}
+
 export function getCampusUser(): CampusUser {
   return getStoredCampusUser() ?? fallbackUser;
 }

@@ -315,7 +315,9 @@ export async function removeListingFromWishlist(listingId: number) {
 export type ListingReportReason =
   | 'FAKE_LISTING'
   | 'WRONG_PRODUCT_DETAILS'
+  | 'MISLEADING_IMAGES'
   | 'SUSPICIOUS_SELLER'
+  | 'STOLEN_ITEM_SUSPICION'
   | 'PROHIBITED_ITEM'
   | 'ABUSIVE_CONTENT'
   | 'DUPLICATE_LISTING'

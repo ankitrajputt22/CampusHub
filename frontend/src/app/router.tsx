@@ -11,6 +11,7 @@ import {
   TermsPage,
 } from '../features/legal/pages/PublicPages';
 import { StudentShell } from '../features/student/components/StudentShell';
+import { AdminShell } from '../features/reports/components/AdminShell';
 import { App } from './App';
 import { HomePage } from './HomePage';
 
@@ -139,6 +140,14 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'student/reports',
+            lazy: async () => {
+              const { MyReportsPage } =
+                await import('../features/reports/pages/MyReportsPage');
+              return { Component: MyReportsPage };
+            },
+          },
+          {
             path: 'student/settings',
             element: (
               <Navigate replace to="/student/profile#profile-security" />
@@ -162,6 +171,27 @@ export const router = createBrowserRouter([
               const { PublicSellerProfilePage } =
                 await import('../features/marketplace/pages/PublicSellerProfilePage');
               return { Component: PublicSellerProfilePage };
+            },
+          },
+        ],
+      },
+      {
+        element: <AdminShell />,
+        children: [
+          {
+            path: 'admin/reports',
+            lazy: async () => {
+              const { AdminReportsPage } =
+                await import('../features/reports/pages/AdminReportsPage');
+              return { Component: AdminReportsPage };
+            },
+          },
+          {
+            path: 'admin/reports/:reportId',
+            lazy: async () => {
+              const { AdminReportDetailsPage } =
+                await import('../features/reports/pages/AdminReportDetailsPage');
+              return { Component: AdminReportDetailsPage };
             },
           },
         ],

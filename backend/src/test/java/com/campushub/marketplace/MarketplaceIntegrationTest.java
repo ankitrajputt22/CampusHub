@@ -351,7 +351,8 @@ class MarketplaceIntegrationTest {
                         visibleListing.getId().intValue()
                 )))
                 .andExpect(jsonPath("$.data.reason", is("FAKE_LISTING")))
-                .andExpect(jsonPath("$.data.status", is("PENDING_REVIEW")));
+                .andExpect(jsonPath("$.data.status", is("PENDING")))
+                .andExpect(jsonPath("$.data.priority", is("HIGH")));
 
         mockMvc.perform(post(
                                 "/api/reports/listing/{listingId}",

@@ -31,6 +31,7 @@ import com.campushub.profile.photo.ProfilePhotoStorage;
 import com.campushub.profile.photo.StoredProfilePhoto;
 import com.campushub.profile.repository.ProfilePrivacySettingsRepository;
 import com.campushub.review.model.SellerReview;
+import com.campushub.review.model.ReviewStatus;
 import com.campushub.review.repository.SellerReviewRepository;
 import com.campushub.user.model.AccountStatus;
 import com.campushub.user.model.User;
@@ -107,6 +108,7 @@ public class ProfileService {
             ProfileUpdateRequest request
     ) {
         User user = loadActiveStudent(authenticatedUserId);
+        int previousTrustScore = currentTrustScore(user);
         user.updateEditableProfile(
                 normalizeRequiredText(request.fullName()),
                 normalizeBio(request.bio()),
@@ -119,6 +121,7 @@ public class ProfileService {
                 normalizeSocialUrl(request.githubUrl(), "github.com", "GitHub")
         );
         TrustScore trustScore = recalculateTrustScore(user);
+        notifyTrustScoreChange(user, previousTrustScore, trustScore.getScore());
         return buildProfile(user, loadPrivacy(user), trustScore);
     }
 
@@ -146,9 +149,11 @@ public class ProfileService {
             MultipartFile photo
     ) {
         User user = loadActiveStudent(authenticatedUserId);
+        int previousTrustScore = currentTrustScore(user);
         StoredProfilePhoto storedPhoto = photoStorage.store(user.getId(), photo);
         user.updateProfilePhoto(storedPhoto.publicUrl(), storedPhoto.fileName());
         TrustScore trustScore = recalculateTrustScore(user);
+        notifyTrustScoreChange(user, previousTrustScore, trustScore.getScore());
         ProfileCompletionSummary completion = calculateProfileCompletion(user);
         return new ProfilePhotoResponse(
                 storedPhoto.publicUrl(),
@@ -274,7 +279,10 @@ public class ProfileService {
                 calculateProfileCompletion(user),
                 sellerStats(user.getId()),
                 mapPrivacy(privacy),
-                reviewRepository.findTop5ByRevieweeIdOrderByCreatedAtDesc(user.getId()).stream()
+                reviewRepository.findTop5ByRevieweeIdAndStatusOrderByCreatedAtDesc(
+                                user.getId(),
+                                ReviewStatus.VISIBLE
+                        ).stream()
                         .map(this::mapReview)
                         .toList()
         );
@@ -321,6 +329,30 @@ public class ProfileService {
                 hasText(user.getLinkedinUrl()) || hasText(user.getGithubUrl())
         );
         return trustScore;
+    }
+
+    private int currentTrustScore(User user) {
+        return trustScoreRepository.findByUserId(user.getId())
+                .map(TrustScore::getScore)
+                .orElse((user.isEmailVerified() ? 20 : 0)
+                        + (user.isPhoneVerified() ? 10 : 0));
+    }
+
+    private void notifyTrustScoreChange(User user, int previousScore, int newScore) {
+        if (previousScore == newScore) {
+            return;
+        }
+        notificationService.notify(
+                user,
+                NotificationType.SYSTEM,
+                NotificationPriority.LOW,
+                "Trust score updated",
+                "Your Campus Trust Score changed from " + previousScore
+                        + " to " + newScore + ".",
+                RelatedEntityType.TRUST_SCORE,
+                user.getId(),
+                "/student/profile"
+        );
     }
 
     private ProfileCompletionSummary calculateProfileCompletion(User user) {

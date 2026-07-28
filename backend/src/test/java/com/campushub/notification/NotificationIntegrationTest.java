@@ -124,10 +124,22 @@ class NotificationIntegrationTest {
                         .param("size", "5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.unreadCount", is(1)))
-                .andExpect(jsonPath("$.data.notifications", hasSize(3)))
+                .andExpect(jsonPath("$.data.notifications", hasSize(4)))
                 .andExpect(jsonPath(
                         "$.data.notifications[?(@.title == 'Private order update')]"
                 ).isEmpty());
+
+        mockMvc.perform(get("/api/notifications")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(owner.accessToken()))
+                        .param("type", "SYSTEM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.notifications", hasSize(2)))
+                .andExpect(jsonPath(
+                        "$.data.notifications[?(@.title == 'Account verified')]"
+                ).isNotEmpty())
+                .andExpect(jsonPath(
+                        "$.data.notifications[?(@.title == 'Complete your profile')]"
+                ).isNotEmpty());
 
         mockMvc.perform(patch(
                         "/api/notifications/{notificationId}/read",

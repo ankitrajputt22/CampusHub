@@ -141,6 +141,7 @@ export function isAllowedNotificationAction(actionUrl: string | null) {
       '/student/profile',
       '/student/wishlist',
       '/student/my-marketplace',
+      '/student/reports',
       '/student/notifications',
     ].includes(actionUrl)
   );

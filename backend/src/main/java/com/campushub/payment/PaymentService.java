@@ -289,12 +289,24 @@ public class PaymentService {
                 order.getSeller(),
                 NotificationType.PAYMENT,
                 NotificationPriority.HIGH,
-                "Item sold",
-                order.getListing().getTitle() + " has a verified payment from "
-                        + buyer.getFullName() + ".",
+                "Payment confirmed",
+                "A payment of ₹" + order.getAmount().toPlainString()
+                        + " for " + order.getListing().getTitle()
+                        + " was verified successfully.",
                 RelatedEntityType.ORDER,
                 order.getId(),
                 orderUrl(order)
+        );
+        notificationService.notify(
+                order.getSeller(),
+                NotificationType.LISTING,
+                NotificationPriority.MEDIUM,
+                "Listing sold",
+                "Your listing " + order.getListing().getTitle()
+                        + " has been sold.",
+                RelatedEntityType.LISTING,
+                order.getListing().getId(),
+                "/student/my-marketplace"
         );
         return verificationResponse(order, payment);
     }

@@ -3,6 +3,7 @@ import {
   ChevronDown,
   CircleDollarSign,
   Compass,
+  FileWarning,
   Heart,
   LayoutDashboard,
   LogOut,
@@ -87,6 +88,7 @@ const primaryNav = [
 const accountNav = [
   { label: 'Profile', to: '/student/profile', icon: UserRound },
   { label: 'Notifications', to: '/student/notifications', icon: Bell },
+  { label: 'My Reports', to: '/student/reports', icon: FileWarning },
 ];
 
 export function StudentShell() {

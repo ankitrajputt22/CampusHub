@@ -16,9 +16,10 @@ import com.campushub.college.service.CollegeService;
 import com.campushub.common.exception.BadRequestException;
 import com.campushub.common.exception.ResourceConflictException;
 import com.campushub.common.exception.ResourceNotFoundException;
-import com.campushub.notification.model.Notification;
+import com.campushub.notification.NotificationService;
+import com.campushub.notification.model.NotificationPriority;
 import com.campushub.notification.model.NotificationType;
-import com.campushub.notification.repository.NotificationRepository;
+import com.campushub.notification.model.RelatedEntityType;
 import com.campushub.user.model.AccountStatus;
 import com.campushub.user.model.User;
 import com.campushub.user.repository.UserRepository;
@@ -40,7 +41,7 @@ public class SignupService {
     private final CollegeService collegeService;
     private final OtpService otpService;
     private final PasswordEncoder passwordEncoder;
-    private final NotificationRepository notificationRepository;
+    private final NotificationService notificationService;
     private final UserActivityRepository activityRepository;
     private final boolean exposeDevOtpCodes;
 
@@ -50,7 +51,7 @@ public class SignupService {
             CollegeService collegeService,
             OtpService otpService,
             PasswordEncoder passwordEncoder,
-            NotificationRepository notificationRepository,
+            NotificationService notificationService,
             UserActivityRepository activityRepository,
             @Value("${app.otp.expose-dev-codes}") boolean exposeDevOtpCodes
     ) {
@@ -59,7 +60,7 @@ public class SignupService {
         this.collegeService = collegeService;
         this.otpService = otpService;
         this.passwordEncoder = passwordEncoder;
-        this.notificationRepository = notificationRepository;
+        this.notificationService = notificationService;
         this.activityRepository = activityRepository;
         this.exposeDevOtpCodes = exposeDevOtpCodes;
     }
@@ -137,12 +138,26 @@ public class SignupService {
         otpService.verifyOtp(user.getId(), OtpChannel.PHONE, request.phoneOtp());
         user.activate();
         trustScoreRepository.save(new TrustScore(user, INITIAL_TRUST_SCORE, "College email and phone verified"));
-        notificationRepository.save(new Notification(
+        notificationService.notify(
                 user,
                 NotificationType.ACCOUNT,
+                NotificationPriority.MEDIUM,
                 "Account verified",
-                "Your college email and phone number are verified. Welcome to Campus Hub."
-        ));
+                "Your college email and phone number are verified. Welcome to Campus Hub.",
+                RelatedEntityType.PROFILE,
+                user.getId(),
+                "/student/profile"
+        );
+        notificationService.notify(
+                user,
+                NotificationType.SYSTEM,
+                NotificationPriority.LOW,
+                "Complete your profile",
+                "Add a profile photo, bio, and professional link to improve your Campus Trust Score.",
+                RelatedEntityType.PROFILE,
+                user.getId(),
+                "/student/profile"
+        );
         activityRepository.save(new UserActivity(
                 user,
                 ActivityType.ACCOUNT_VERIFIED,

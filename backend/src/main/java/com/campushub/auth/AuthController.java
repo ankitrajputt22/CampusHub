@@ -18,6 +18,7 @@ import com.campushub.auth.dto.SignupStartResponse;
 import com.campushub.auth.dto.SignupVerifyRequest;
 import com.campushub.auth.dto.SignupVerifyResponse;
 import com.campushub.auth.model.OtpChannel;
+import com.campushub.auth.service.AuthSessionService;
 import com.campushub.auth.service.LoginService;
 import com.campushub.auth.service.PasswordResetService;
 import com.campushub.auth.service.RefreshTokenService;
@@ -27,8 +28,8 @@ import com.campushub.common.exception.UnauthorizedException;
 import com.campushub.security.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,17 +42,20 @@ public class AuthController {
     private final LoginService loginService;
     private final RefreshTokenService refreshTokenService;
     private final PasswordResetService passwordResetService;
+    private final AuthSessionService authSessionService;
 
     public AuthController(
             SignupService signupService,
             LoginService loginService,
             RefreshTokenService refreshTokenService,
-            PasswordResetService passwordResetService
+            PasswordResetService passwordResetService,
+            AuthSessionService authSessionService
     ) {
         this.signupService = signupService;
         this.loginService = loginService;
         this.refreshTokenService = refreshTokenService;
         this.passwordResetService = passwordResetService;
+        this.authSessionService = authSessionService;
     }
 
     @PostMapping("/check-email")
@@ -118,7 +122,7 @@ public class AuthController {
         if (authenticatedUser == null) {
             throw new UnauthorizedException("Authentication is required.");
         }
-        refreshTokenService.revokeAllForUser(authenticatedUser.userId());
+        authSessionService.logoutAllDevices(authenticatedUser.userId());
         return ApiResponse.success("Logged out from all devices successfully.", null);
     }
 

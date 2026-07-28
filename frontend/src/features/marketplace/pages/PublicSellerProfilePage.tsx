@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   BadgeCheck,
   Github,
+  Flag,
   Linkedin,
   PackageCheck,
   RefreshCw,
@@ -13,6 +14,14 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { resolveApiAssetUrl } from '../../../lib/apiClient';
+import { getApiErrorMessage } from '../../auth/api/authApi';
+import {
+  reportUser,
+  type ReportReason,
+  type UserReportReason,
+} from '../../reports/api/reportsApi';
+import { ReportEntityModal } from '../../reports/components/ReportEntityModal';
+import { getCampusUser } from '../../student/lib/session';
 import {
   getPublicSellerProfile,
   type PublicSellerProfile,
@@ -25,6 +34,8 @@ export function PublicSellerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -82,6 +93,17 @@ export function PublicSellerProfilePage() {
   }
 
   const photoUrl = resolveApiAssetUrl(profile.profilePhotoUrl);
+  const ownProfile = getCampusUser().id === profile.id;
+  const profileId = profile.id;
+
+  async function submitReport(reason: ReportReason, description: string) {
+    try {
+      await reportUser(profileId, reason as UserReportReason, description);
+      setNotice('Report submitted. You can track its status in My Reports.');
+    } catch (caught) {
+      throw new Error(getApiErrorMessage(caught));
+    }
+  }
 
   return (
     <div className="mx-auto max-w-5xl pb-10">
@@ -92,6 +114,15 @@ export function PublicSellerProfilePage() {
         <ArrowLeft className="h-4 w-4" />
         Back to marketplace
       </Link>
+
+      {notice && (
+        <div
+          className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"
+          role="status"
+        >
+          {notice}
+        </div>
+      )}
 
       <section className="overflow-hidden rounded-2xl border border-[#dce2eb] bg-white shadow-sm">
         <div className="h-28 bg-[#031635]" />
@@ -107,7 +138,7 @@ export function PublicSellerProfilePage() {
               {initials(profile.fullName)}
             </span>
           )}
-          <div className="pb-1">
+          <div className="min-w-0 flex-1 pb-1">
             <h1 className="text-2xl font-black text-[#071b33]">
               {profile.fullName}
             </h1>
@@ -117,6 +148,16 @@ export function PublicSellerProfilePage() {
             </p>
             <p className="mt-2 text-sm text-[#667386]">{profile.collegeName}</p>
           </div>
+          {!ownProfile && (
+            <button
+              className="mb-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-sm font-bold text-rose-700 hover:bg-rose-50"
+              onClick={() => setReportOpen(true)}
+              type="button"
+            >
+              <Flag aria-hidden="true" className="h-4 w-4" />
+              Report student
+            </button>
+          )}
         </div>
       </section>
 
@@ -194,6 +235,13 @@ export function PublicSellerProfilePage() {
           </dl>
         </section>
       </div>
+      <ReportEntityModal
+        onClose={() => setReportOpen(false)}
+        onSubmit={submitReport}
+        open={reportOpen}
+        targetName={profile.fullName}
+        type="USER"
+      />
     </div>
   );
 }

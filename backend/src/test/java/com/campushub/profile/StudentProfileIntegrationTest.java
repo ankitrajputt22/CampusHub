@@ -1,6 +1,7 @@
 package com.campushub.profile;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -90,6 +91,19 @@ class StudentProfileIntegrationTest {
                 .andExpect(jsonPath("$.data.role", is("STUDENT")))
                 .andExpect(jsonPath("$.data.accountStatus", is("ACTIVE")))
                 .andExpect(jsonPath("$.data.trustScore.score", is(40)));
+
+        mockMvc.perform(get("/api/notifications")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(student.accessToken()))
+                        .param("type", "SYSTEM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(
+                        "$.data.notifications[?(@.title == 'Trust score updated')]",
+                        hasSize(1)
+                ))
+                .andExpect(jsonPath(
+                        "$.data.notifications[?(@.relatedEntityType == 'TRUST_SCORE')]",
+                        hasSize(1)
+                ));
 
         Map<String, Object> privacyRequest = Map.of(
                 "showBio", true,
@@ -186,6 +200,23 @@ class StudentProfileIntegrationTest {
                                 Map.of("refreshToken", signedInAgain.refreshToken())
                         )))
                 .andExpect(status().isUnauthorized());
+
+        AuthSession afterSessionReset = login(
+                student.userId(),
+                "security.student@iitd.ac.in",
+                "Updated@456"
+        );
+        mockMvc.perform(get("/api/notifications")
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                bearer(afterSessionReset.accessToken())
+                        )
+                        .param("type", "SECURITY"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(
+                        "$.data.notifications[?(@.title == 'Signed out from all devices')]",
+                        hasSize(1)
+                ));
     }
 
     @Test

@@ -314,4 +314,14 @@ public class User {
         this.status = AccountStatus.DEACTIVATION_REQUESTED;
         this.updatedAt = Instant.now();
     }
+
+    public void changeStatus(AccountStatus status) {
+        this.status = status;
+        this.updatedAt = Instant.now();
+    }
+
+    public void changeRole(UserRole role) {
+        this.role = role;
+        this.updatedAt = Instant.now();
+    }
 }

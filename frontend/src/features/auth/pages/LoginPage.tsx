@@ -64,13 +64,15 @@ export function LoginPage() {
     setServerMessage('');
     try {
       const response = await login(values);
-      if (response.user.role !== 'STUDENT') {
-        setServerMessage(
-          'This application currently supports student accounts only.',
-        );
+      saveCampusSession(response, values.rememberMe);
+
+      if (
+        response.user.role === 'ADMIN' ||
+        response.user.role === 'SUPER_ADMIN'
+      ) {
+        navigate('/admin/reports', { replace: true });
         return;
       }
-      saveCampusSession(response, values.rememberMe);
 
       const redirectFromState =
         typeof location.state === 'object' &&

@@ -1,0 +1,17 @@
+package com.campushub.moderation.model;
+
+public enum ModerationActionType {
+    REPORT_UNDER_REVIEW,
+    REPORT_REJECTED,
+    REPORT_CLOSED,
+    LISTING_BLOCKED,
+    LISTING_RESTORED,
+    LISTING_UNDER_REVIEW,
+    REVIEW_HIDDEN,
+    REVIEW_RESTORED,
+    REVIEW_UNDER_REVIEW,
+    USER_WARNED,
+    USER_SUSPENDED,
+    USER_BLOCKED,
+    USER_REACTIVATED
+}

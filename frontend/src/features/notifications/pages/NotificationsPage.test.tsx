@@ -109,6 +109,7 @@ describe('NotificationsPage', () => {
     expect(screen.getByText('Item ready for pickup')).toBeInTheDocument();
     expect(screen.getByText('New review received')).toBeInTheDocument();
     expect(screen.getByText('Order updates')).toBeInTheDocument();
+    expect(screen.getByText('System alerts')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Unread 2' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'View order' }));
@@ -146,5 +147,30 @@ describe('NotificationsPage', () => {
     expect(
       screen.getByRole('button', { name: 'Mark all as read' }),
     ).toBeDisabled();
+  });
+
+  it('does not render an action for an unapproved external route', async () => {
+    vi.mocked(getNotifications).mockResolvedValue({
+      ...notifications,
+      notifications: [
+        {
+          ...notifications.notifications[0],
+          actionUrl: 'https://example.com/untrusted',
+        },
+      ],
+    });
+
+    render(
+      <MemoryRouter>
+        <NotificationsPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText('Item ready for pickup'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'View order' }),
+    ).not.toBeInTheDocument();
   });
 });

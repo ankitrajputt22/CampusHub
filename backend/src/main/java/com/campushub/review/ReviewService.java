@@ -16,6 +16,7 @@ import com.campushub.review.dto.ReviewWorkspaceResponse.PendingReview;
 import com.campushub.review.dto.ReviewWorkspaceResponse.ReviewItem;
 import com.campushub.review.dto.ReviewWorkspaceResponse.ReviewStats;
 import com.campushub.review.model.SellerReview;
+import com.campushub.review.model.ReviewStatus;
 import com.campushub.review.repository.SellerReviewRepository;
 import com.campushub.user.model.AccountStatus;
 import com.campushub.user.model.User;
@@ -65,12 +66,18 @@ public class ReviewService {
                 ),
                 pending.stream().map(this::toPending).toList(),
                 reviewRepository
-                        .findAllByRevieweeIdOrderByCreatedAtDesc(user.getId())
+                        .findAllByRevieweeIdAndStatusOrderByCreatedAtDesc(
+                                user.getId(),
+                                ReviewStatus.VISIBLE
+                        )
                         .stream()
                         .map(this::toItem)
                         .toList(),
                 reviewRepository
-                        .findAllByReviewerIdOrderByCreatedAtDesc(user.getId())
+                        .findAllByReviewerIdAndStatusOrderByCreatedAtDesc(
+                                user.getId(),
+                                ReviewStatus.VISIBLE
+                        )
                         .stream()
                         .map(this::toItem)
                         .toList()
