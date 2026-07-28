@@ -25,3 +25,7 @@ app:
     storage-directory: target/test-profile-photos
   listing-image:
     storage-directory: target/test-listing-images
+  razorpay:
+    key-id: rzp_test_campus_hub
+    key-secret: campus-hub-test-razorpay-secret
+    mock-enabled: true

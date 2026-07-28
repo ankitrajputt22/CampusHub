@@ -46,12 +46,35 @@ public class SellerReview {
     protected SellerReview() {
     }
 
+    public SellerReview(
+            MarketplaceOrder order,
+            User reviewer,
+            User reviewee,
+            int rating,
+            String message
+    ) {
+        this.order = order;
+        this.reviewer = reviewer;
+        this.reviewee = reviewee;
+        this.rating = rating;
+        this.message = message;
+        this.createdAt = Instant.now();
+    }
+
     public Long getId() {
         return id;
     }
 
     public User getReviewer() {
         return reviewer;
+    }
+
+    public MarketplaceOrder getOrder() {
+        return order;
+    }
+
+    public User getReviewee() {
+        return reviewee;
     }
 
     public int getRating() {

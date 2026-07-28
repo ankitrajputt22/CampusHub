@@ -40,4 +40,20 @@ public class WishlistItem {
         this.listing = listing;
         this.createdAt = Instant.now();
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public Listing getListing() {
+        return listing;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

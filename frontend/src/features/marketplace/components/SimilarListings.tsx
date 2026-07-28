@@ -10,22 +10,29 @@ export function SimilarListings({
   listings,
   wishlistBusyIds,
   onWishlistChange,
+  exploreCollegeId,
 }: {
   category: string;
   collegeName: string;
   listings: MarketplaceListing[];
   wishlistBusyIds: Set<number>;
   onWishlistChange: (listing: MarketplaceListing) => void;
+  exploreCollegeId?: number;
 }) {
+  const exploring = exploreCollegeId !== undefined;
+
   return (
     <section className="mt-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.13em] text-[#007b95]">
-            Recommended from your campus
+            {exploring
+              ? 'More from this verified college'
+              : 'Recommended from your campus'}
           </p>
           <h2 className="mt-1 text-xl font-black tracking-[-0.02em] text-[#071b33]">
-            Other {category.toLowerCase()} in your college
+            Other {category.toLowerCase()} in{' '}
+            {exploring ? collegeName : 'your college'}
           </h2>
           <p className="mt-1 text-sm text-[#667386]">
             Active listings from verified students at {collegeName}
@@ -33,7 +40,11 @@ export function SimilarListings({
         </div>
         <Link
           className="inline-flex items-center gap-2 text-sm font-bold text-[#007b95] hover:text-[#005d72]"
-          to={`/student/marketplace?search=${encodeURIComponent(category)}`}
+          to={
+            exploring
+              ? `/student/explore-colleges?collegeId=${exploreCollegeId}&search=${encodeURIComponent(category)}`
+              : `/student/marketplace?search=${encodeURIComponent(category)}`
+          }
         >
           Browse category
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
@@ -48,6 +59,10 @@ export function SimilarListings({
               listing={listing}
               onWishlistChange={onWishlistChange}
               wishlistBusy={wishlistBusyIds.has(listing.id)}
+              detailsBasePath={
+                exploring ? '/student/explore-colleges/listing' : '/listing'
+              }
+              wishlistEnabled={!exploring}
             />
           ))}
         </div>
@@ -56,7 +71,7 @@ export function SimilarListings({
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eff4ff] text-[#007b95]">
             <PackageSearch aria-hidden="true" className="h-5 w-5" />
           </span>
-          No similar active listings are available in your college right now.
+          No similar active listings are available at {collegeName} right now.
         </div>
       )}
     </section>

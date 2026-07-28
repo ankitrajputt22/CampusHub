@@ -98,6 +98,60 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
             )
     );
 
+    private static final List<CrossCollegeDemoUser> EXPLORE_DEMO_USERS = List.of(
+            new CrossCollegeDemoUser(
+                    "IITD",
+                    new DemoUser(
+                            "Aarav Khanna",
+                            "demo.aarav@iitd.ac.in",
+                            "+919700000201",
+                            "Computer Science Engineering",
+                            "B.Tech",
+                            "3rd Year",
+                            "CHXPLORE201",
+                            "Kumaon Hostel",
+                            "IIT Delhi student sharing project equipment and academic books.",
+                            null,
+                            null,
+                            88
+                    )
+            ),
+            new CrossCollegeDemoUser(
+                    "IITB",
+                    new DemoUser(
+                            "Mira Deshmukh",
+                            "demo.mira@iitb.ac.in",
+                            "+919700000202",
+                            "Electrical Engineering",
+                            "B.Tech",
+                            "4th Year",
+                            "CHXPLORE202",
+                            "Hostel 10",
+                            "IIT Bombay student listing electronics and hostel essentials.",
+                            null,
+                            null,
+                            82
+                    )
+            ),
+            new CrossCollegeDemoUser(
+                    "IITK",
+                    new DemoUser(
+                            "Kabir Srivastava",
+                            "demo.kabir@iitk.ac.in",
+                            "+919700000203",
+                            "Mechanical Engineering",
+                            "B.Tech",
+                            "2nd Year",
+                            "CHXPLORE203",
+                            "Hall 5",
+                            "IIT Kanpur student with useful lab and campus commute items.",
+                            null,
+                            null,
+                            76
+                    )
+            )
+    );
+
     private static final List<DemoListing> DEMO_LISTINGS = List.of(
             new DemoListing(
                     "demo.priya@recmainpuri.in",
@@ -245,6 +299,81 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
             )
     );
 
+    private static final List<DemoListing> EXPLORE_DEMO_LISTINGS = List.of(
+            new DemoListing(
+                    "demo.aarav@iitd.ac.in",
+                    "Arduino robotics starter kit",
+                    "Arduino Uno, breadboard, jumper wires, sensors, and a compact project "
+                            + "box. All components were tested before listing.",
+                    "Lab Equipment",
+                    "1850.00",
+                    ItemCondition.LIKE_NEW,
+                    ListingStatus.ACTIVE,
+                    "IIT Delhi Student Activity Centre",
+                    true
+            ),
+            new DemoListing(
+                    "demo.aarav@iitd.ac.in",
+                    "Introduction to Algorithms campus edition",
+                    "Well-kept algorithms textbook with a few pencil notes and no missing "
+                            + "pages.",
+                    "Books",
+                    "780.00",
+                    ItemCondition.GOOD,
+                    ListingStatus.ACTIVE,
+                    "IIT Delhi Central Library",
+                    false
+            ),
+            new DemoListing(
+                    "demo.mira@iitb.ac.in",
+                    "Digital multimeter with probe set",
+                    "Reliable digital multimeter with probes, protective cover, and a fresh "
+                            + "battery for electronics lab work.",
+                    "Electronics",
+                    "1250.00",
+                    ItemCondition.LIKE_NEW,
+                    ListingStatus.ACTIVE,
+                    "IIT Bombay Main Building",
+                    true
+            ),
+            new DemoListing(
+                    "demo.mira@iitb.ac.in",
+                    "Compact induction cooktop",
+                    "Clean induction cooktop with temperature controls and timer. Suitable "
+                            + "for approved hostel common areas.",
+                    "Hostel Essentials",
+                    "1600.00",
+                    ItemCondition.GOOD,
+                    ListingStatus.ACTIVE,
+                    "IIT Bombay Hostel 10 Gate",
+                    true
+            ),
+            new DemoListing(
+                    "demo.kabir@iitk.ac.in",
+                    "Mechanical engineering drawing board",
+                    "Portable drawing board with parallel ruler and clips, suitable for "
+                            + "first-year engineering graphics.",
+                    "Lab Equipment",
+                    "950.00",
+                    ItemCondition.GOOD,
+                    ListingStatus.ACTIVE,
+                    "IIT Kanpur Academic Area",
+                    false
+            ),
+            new DemoListing(
+                    "demo.kabir@iitk.ac.in",
+                    "Campus commuter bicycle",
+                    "Single-speed bicycle with working brakes, serviced chain, and a rear "
+                            + "carrier for daily campus travel.",
+                    "Bicycles",
+                    "2900.00",
+                    ItemCondition.GOOD,
+                    ListingStatus.ACTIVE,
+                    "IIT Kanpur Hall 5",
+                    true
+            )
+    );
+
     private final CollegeRepository collegeRepository;
     private final UserRepository userRepository;
     private final ListingRepository listingRepository;
@@ -300,8 +429,35 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
             users.put(definition.email(), user);
         }
 
+        for (CrossCollegeDemoUser crossCollegeDefinition : EXPLORE_DEMO_USERS) {
+            DemoUser definition = crossCollegeDefinition.user();
+            College exploreCollege = collegeRepository.findByCodeIgnoreCase(
+                            crossCollegeDefinition.collegeCode()
+                    )
+                    .filter(College::isExplorable)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Explore demo college is missing or inactive: "
+                                    + crossCollegeDefinition.collegeCode()
+                    ));
+            User existing = userRepository.findByEmailIgnoreCase(definition.email())
+                    .orElse(null);
+            User user;
+            if (existing == null) {
+                user = createUser(definition, exploreCollege);
+                createdUsers++;
+            } else {
+                validateExistingUser(existing, exploreCollege);
+                user = existing;
+            }
+            users.put(definition.email(), user);
+        }
+
         int createdListings = 0;
-        for (DemoListing definition : DEMO_LISTINGS) {
+        List<DemoListing> allListings = java.util.stream.Stream.concat(
+                DEMO_LISTINGS.stream(),
+                EXPLORE_DEMO_LISTINGS.stream()
+        ).toList();
+        for (DemoListing definition : allListings) {
             User seller = users.get(definition.sellerEmail());
             if (!listingRepository.existsBySellerIdAndTitleIgnoreCase(
                     seller.getId(),
@@ -324,7 +480,8 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
         }
 
         LOGGER.info(
-                "Local demo data ready for college {}: {} new users and {} new listings",
+                "Local demo data ready for {} and Explore Other Colleges: "
+                        + "{} new users and {} new listings",
                 college.getCode(),
                 createdUsers,
                 createdListings
@@ -409,6 +566,12 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
             String linkedinUrl,
             String githubUrl,
             int baseTrustScore
+    ) {
+    }
+
+    private record CrossCollegeDemoUser(
+            String collegeCode,
+            DemoUser user
     ) {
     }
 

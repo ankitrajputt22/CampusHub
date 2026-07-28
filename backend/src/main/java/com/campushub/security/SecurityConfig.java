@@ -41,15 +41,43 @@ public class SecurityConfig {
                                 "/api/user/profile/photo/content/**",
                                 "/api/listings/images/**"
                         ).permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/check-email",
+                                "/api/auth/check-phone",
+                                "/api/auth/signup/start",
+                                "/api/auth/send-email-otp",
+                                "/api/auth/send-phone-otp",
+                                "/api/auth/verify-signup-otp",
+                                "/api/auth/login",
+                                "/api/auth/refresh",
+                                "/api/auth/logout",
+                                "/api/auth/password-reset/request",
+                                "/api/auth/password-reset/verify",
+                                "/api/auth/password-reset/complete"
+                        ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/logout-all-devices"
+                        ).authenticated()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
                         .requestMatchers("/api/user/**").hasRole("STUDENT")
+                        .requestMatchers(
+                                "/api/colleges/explore",
+                                "/api/colleges/explore/**"
+                        ).hasRole("STUDENT")
                         .requestMatchers("/api/listings/**").hasRole("STUDENT")
                         .requestMatchers("/api/wishlist/**").hasRole("STUDENT")
                         .requestMatchers("/api/reports/**").hasRole("STUDENT")
                         .requestMatchers("/api/orders/**").hasRole("STUDENT")
+                        .requestMatchers("/api/payments/**").hasRole("STUDENT")
+                        .requestMatchers("/api/reviews/**").hasRole("STUDENT")
+                        .requestMatchers(
+                                "/api/notifications",
+                                "/api/notifications/**"
+                        ).hasRole("STUDENT")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

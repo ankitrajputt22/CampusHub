@@ -7,6 +7,10 @@ import com.campushub.common.exception.ResourceNotFoundException;
 import com.campushub.listing.model.Listing;
 import com.campushub.listing.model.ListingStatus;
 import com.campushub.listing.repository.ListingRepository;
+import com.campushub.notification.NotificationService;
+import com.campushub.notification.model.NotificationPriority;
+import com.campushub.notification.model.NotificationType;
+import com.campushub.notification.model.RelatedEntityType;
 import com.campushub.report.dto.ListingReportRequest;
 import com.campushub.report.dto.ListingReportResponse;
 import com.campushub.report.model.ListingReport;
@@ -26,15 +30,18 @@ public class ListingReportService {
     private final UserRepository userRepository;
     private final ListingRepository listingRepository;
     private final ListingReportRepository reportRepository;
+    private final NotificationService notificationService;
 
     public ListingReportService(
             UserRepository userRepository,
             ListingRepository listingRepository,
-            ListingReportRepository reportRepository
+            ListingReportRepository reportRepository,
+            NotificationService notificationService
     ) {
         this.userRepository = userRepository;
         this.listingRepository = listingRepository;
         this.reportRepository = reportRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -46,10 +53,10 @@ public class ListingReportService {
         User reporter = loadActiveStudent(authenticatedUserId);
         Listing listing = listingRepository.findMarketplaceListingById(listingId)
                 .filter(item -> item.getStatus() == ListingStatus.ACTIVE)
-                .filter(item -> item.getCollege().getId().equals(reporter.getCollege().getId()))
+                .filter(item -> item.getCollege().isExplorable())
                 .filter(item -> item.getSeller().getStatus() == AccountStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "This listing is unavailable in your college marketplace."
+                        "This listing is no longer available."
                 ));
         if (listing.getSeller().getId().equals(reporter.getId())) {
             throw new ForbiddenException("You cannot report your own listing.");
@@ -66,6 +73,17 @@ public class ListingReportService {
                 parseReason(request.reason()),
                 normalizeDescription(request.description())
         ));
+        notificationService.notify(
+                reporter,
+                NotificationType.REPORT,
+                NotificationPriority.MEDIUM,
+                "Report submitted",
+                "Your report for " + listing.getTitle()
+                        + " has been submitted for review.",
+                RelatedEntityType.REPORT,
+                report.getId(),
+                "/student/notifications"
+        );
         return new ListingReportResponse(
                 report.getId(),
                 listingId,
@@ -98,7 +116,12 @@ public class ListingReportService {
         if (user.getRole() != UserRole.STUDENT || user.getStatus() != AccountStatus.ACTIVE) {
             throw new ForbiddenException("An active student account is required.");
         }
-        if (!user.getCollege().isActive()) {
+        if (!user.isEmailVerified() || !user.isPhoneVerified()) {
+            throw new ForbiddenException(
+                    "Email and phone verification are required to report a listing."
+            );
+        }
+        if (!user.getCollege().isExplorable()) {
             throw new ForbiddenException("Your college marketplace is currently unavailable.");
         }
         return user;

@@ -1,4 +1,8 @@
 import { apiClient } from '../../../lib/apiClient';
+import {
+  createPaymentCheckout,
+  type PaymentCheckout,
+} from '../../payments/api/paymentsApi';
 
 export type MarketplaceSeller = {
   id: number;
@@ -117,6 +121,88 @@ export type CreatedListing = {
   createdAt: string;
 };
 
+export type MyListingStatus =
+  'ACTIVE' | 'RESERVED' | 'SOLD' | 'INACTIVE' | 'UNDER_REVIEW' | 'BLOCKED';
+
+export type SellerStats = {
+  totalListings: number;
+  activeListings: number;
+  soldListings: number;
+  inactiveListings: number;
+  totalViews: number;
+  totalWishlistSaves: number;
+};
+
+export type MyListingSummary = {
+  id: number;
+  title: string;
+  price: number;
+  category: string;
+  condition: string;
+  pickupLocation: string;
+  status: MyListingStatus;
+  coverImageUrl: string | null;
+  views: number;
+  wishlistCount: number;
+  postedDate: string;
+  updatedAt: string;
+  negotiable: boolean;
+};
+
+export type MyMarketplace = {
+  stats: SellerStats;
+  listings: MyListingSummary[];
+  pagination: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+};
+
+export type MyMarketplaceQuery = {
+  search?: string;
+  status?: MyListingStatus;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  condition?: string;
+  pickupLocation?: string;
+  postedDate?: string;
+  sortBy?:
+    'newest' | 'priceAsc' | 'priceDesc' | 'mostViewed' | 'mostWishlisted';
+  page?: number;
+  size?: number;
+};
+
+export type MyListingDetails = {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  condition: string;
+  pickupLocation: string;
+  negotiable: boolean;
+  availableQuantity: number;
+  additionalNotes: string | null;
+  status: MyListingStatus;
+  collegeName: string;
+  sellerName: string;
+  images: string[];
+  views: number;
+  wishlistCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ListingStatusUpdate = {
+  id: number;
+  status: MyListingStatus | 'DELETED';
+  updatedAt: string;
+};
+
 export async function createMarketplaceListing(
   payload: CreateListingPayload,
   images: File[],
@@ -134,6 +220,64 @@ export async function createMarketplaceListing(
     {
       headers: { 'Content-Type': 'multipart/form-data' },
     },
+  );
+  return response.data.data;
+}
+
+export async function getMyMarketplace(
+  query: MyMarketplaceQuery,
+  signal?: AbortSignal,
+) {
+  const response = await apiClient.get<ApiEnvelope<MyMarketplace>>(
+    '/listings/my',
+    { params: query, signal },
+  );
+  return response.data.data;
+}
+
+export async function getMyListing(listingId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ApiEnvelope<MyListingDetails>>(
+    `/listings/my/${listingId}`,
+    { signal },
+  );
+  return response.data.data;
+}
+
+export async function updateMarketplaceListing(
+  listingId: number,
+  payload: CreateListingPayload,
+  replacementImages: File[],
+) {
+  const body = new FormData();
+  body.append(
+    'listing',
+    new Blob([JSON.stringify(payload)], { type: 'application/json' }),
+  );
+  replacementImages.forEach((image) => body.append('images', image));
+
+  const response = await apiClient.put<ApiEnvelope<MyListingDetails>>(
+    `/listings/${listingId}`,
+    body,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  );
+  return response.data.data;
+}
+
+export async function updateMarketplaceListingStatus(
+  listingId: number,
+  action: 'mark-sold' | 'mark-inactive' | 'reactivate',
+) {
+  const response = await apiClient.patch<ApiEnvelope<ListingStatusUpdate>>(
+    `/listings/${listingId}/${action}`,
+  );
+  return response.data.data;
+}
+
+export async function deleteMarketplaceListing(listingId: number) {
+  const response = await apiClient.delete<ApiEnvelope<ListingStatusUpdate>>(
+    `/listings/${listingId}`,
   );
   return response.data.data;
 }
@@ -195,22 +339,10 @@ export async function reportMarketplaceListing(
   return response.data.data;
 }
 
-export type OrderInitiation = {
-  orderId: number;
-  listingId: number;
-  listingTitle: string;
-  amount: number;
-  status: 'PENDING_PAYMENT';
-  paymentRequired: boolean;
-  nextStep: string;
-  createdAt: string;
-};
+export type OrderInitiation = PaymentCheckout;
 
 export async function initiateMarketplaceOrder(listingId: number) {
-  const response = await apiClient.post<ApiEnvelope<OrderInitiation>>(
-    `/orders/listings/${listingId}`,
-  );
-  return response.data.data;
+  return createPaymentCheckout(listingId);
 }
 
 export type PublicSellerProfile = {

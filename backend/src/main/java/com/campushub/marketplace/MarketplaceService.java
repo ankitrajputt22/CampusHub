@@ -16,10 +16,19 @@ import com.campushub.marketplace.dto.CollegeMarketplaceResponse.CollegeSummary;
 import com.campushub.marketplace.dto.CollegeMarketplaceResponse.PaginationSummary;
 import com.campushub.marketplace.dto.CreateListingRequest;
 import com.campushub.marketplace.dto.CreatedListingResponse;
+import com.campushub.marketplace.dto.ListingStatusUpdateResponse;
 import com.campushub.marketplace.dto.MarketplaceListingResponse;
 import com.campushub.marketplace.dto.MarketplaceListingResponse.SellerSummary;
+import com.campushub.marketplace.dto.MyListingDetailsResponse;
+import com.campushub.marketplace.dto.MyMarketplaceResponse;
+import com.campushub.marketplace.dto.MyMarketplaceResponse.MyListingSummary;
+import com.campushub.marketplace.dto.MyMarketplaceResponse.SellerStats;
 import com.campushub.marketplace.dto.ProductDetailsResponse;
 import com.campushub.marketplace.dto.ProductDetailsResponse.SellerDetails;
+import com.campushub.notification.NotificationService;
+import com.campushub.notification.model.NotificationPriority;
+import com.campushub.notification.model.NotificationType;
+import com.campushub.notification.model.RelatedEntityType;
 import com.campushub.order.model.OrderStatus;
 import com.campushub.order.repository.MarketplaceOrderRepository;
 import com.campushub.profile.model.ProfilePrivacySettings;
@@ -32,6 +41,7 @@ import com.campushub.user.repository.UserRepository;
 import com.campushub.user.trustscore.TrustScore;
 import com.campushub.user.trustscore.TrustScoreRepository;
 import com.campushub.wishlist.repository.WishlistItemRepository;
+import com.campushub.wishlist.model.WishlistItem;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -53,6 +63,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -96,6 +108,7 @@ public class MarketplaceService {
     private final ProfilePrivacySettingsRepository privacyRepository;
     private final SellerReviewRepository reviewRepository;
     private final MarketplaceOrderRepository orderRepository;
+    private final NotificationService notificationService;
 
     public MarketplaceService(
             UserRepository userRepository,
@@ -106,7 +119,8 @@ public class MarketplaceService {
             TrustScoreRepository trustScoreRepository,
             ProfilePrivacySettingsRepository privacyRepository,
             SellerReviewRepository reviewRepository,
-            MarketplaceOrderRepository orderRepository
+            MarketplaceOrderRepository orderRepository,
+            NotificationService notificationService
     ) {
         this.userRepository = userRepository;
         this.listingRepository = listingRepository;
@@ -117,6 +131,7 @@ public class MarketplaceService {
         this.privacyRepository = privacyRepository;
         this.reviewRepository = reviewRepository;
         this.orderRepository = orderRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -171,6 +186,17 @@ public class MarketplaceService {
             storedImages.forEach(image -> listingImageStorage.delete(image.fileName()));
             throw exception;
         }
+
+        notificationService.notify(
+                seller,
+                NotificationType.LISTING,
+                NotificationPriority.LOW,
+                "Listing created",
+                "Your listing " + listing.getTitle() + " is now active.",
+                RelatedEntityType.LISTING,
+                listing.getId(),
+                "/student/my-marketplace"
+        );
 
         return new CreatedListingResponse(
                 listing.getId(),
@@ -266,6 +292,183 @@ public class MarketplaceService {
     }
 
     @Transactional(readOnly = true)
+    public MyMarketplaceResponse getMyMarketplace(
+            Long authenticatedUserId,
+            String search,
+            String status,
+            String category,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String condition,
+            String pickupLocation,
+            String postedDate,
+            String sortBy,
+            Integer requestedPage,
+            Integer requestedSize
+    ) {
+        User seller = loadActiveStudent(authenticatedUserId);
+        validatePriceRange(minPrice, maxPrice);
+
+        int page = requestedPage == null ? 0 : requestedPage;
+        int size = requestedSize == null ? DEFAULT_PAGE_SIZE : requestedSize;
+        if (page < 0) {
+            throw new BadRequestException("Page must be zero or greater.");
+        }
+        if (size < 1 || size > MAX_PAGE_SIZE) {
+            throw new BadRequestException(
+                    "Page size must be between 1 and " + MAX_PAGE_SIZE + "."
+            );
+        }
+
+        ListingStatus parsedStatus = parseSellerStatus(status);
+        ItemCondition parsedCondition = parseCondition(condition);
+        Instant postedAfter = parsePostedAfter(postedDate);
+        SellerListingSort listingSort = parseSellerSort(sortBy);
+        Specification<Listing> specification = myListingSpecification(
+                seller.getId(),
+                search,
+                parsedStatus,
+                category,
+                minPrice,
+                maxPrice,
+                parsedCondition,
+                pickupLocation,
+                postedAfter,
+                listingSort.wishlistedFirst()
+        );
+        Page<Listing> listingPage = listingRepository.findAll(
+                specification,
+                PageRequest.of(page, size, listingSort.sort())
+        );
+
+        return new MyMarketplaceResponse(
+                getSellerStats(seller.getId()),
+                listingPage.getContent().stream()
+                        .map(this::toMyListingSummary)
+                        .toList(),
+                new MyMarketplaceResponse.PaginationSummary(
+                        listingPage.getNumber(),
+                        listingPage.getSize(),
+                        listingPage.getTotalElements(),
+                        listingPage.getTotalPages(),
+                        listingPage.hasNext()
+                )
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public SellerStats getMyMarketplaceStats(Long authenticatedUserId) {
+        User seller = loadActiveStudent(authenticatedUserId);
+        return getSellerStats(seller.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public MyListingDetailsResponse getMyListing(
+            Long authenticatedUserId,
+            Long listingId
+    ) {
+        loadActiveStudent(authenticatedUserId);
+        return toMyListingDetails(requireOwnedListing(authenticatedUserId, listingId));
+    }
+
+    @Transactional
+    public MyListingDetailsResponse updateListing(
+            Long authenticatedUserId,
+            Long listingId,
+            CreateListingRequest request,
+            List<MultipartFile> replacementImages
+    ) {
+        loadActiveStudent(authenticatedUserId);
+        Listing listing = requireOwnedListing(authenticatedUserId, listingId);
+        if (listing.getStatus() != ListingStatus.ACTIVE
+                && listing.getStatus() != ListingStatus.INACTIVE) {
+            throw new BadRequestException(
+                    "Only active or inactive listings can be edited."
+            );
+        }
+        validateUpdateRequest(request, replacementImages);
+
+        listing.updateDetails(
+                request.title().trim(),
+                request.description().trim(),
+                request.category().trim(),
+                request.price(),
+                parseCondition(request.condition()),
+                request.pickupLocation().trim(),
+                request.negotiable(),
+                request.availableQuantity(),
+                normalize(request.additionalNotes())
+        );
+        if (replacementImages != null && !replacementImages.isEmpty()) {
+            replaceListingImages(listing, replacementImages);
+        }
+        listingRepository.saveAndFlush(listing);
+        return toMyListingDetails(listing);
+    }
+
+    @Transactional
+    public ListingStatusUpdateResponse markListingSold(
+            Long authenticatedUserId,
+            Long listingId
+    ) {
+        return changeOwnedListingStatus(
+                authenticatedUserId,
+                listingId,
+                ListingStatus.ACTIVE,
+                ListingStatus.SOLD,
+                "Only an active listing can be marked as sold."
+        );
+    }
+
+    @Transactional
+    public ListingStatusUpdateResponse markListingInactive(
+            Long authenticatedUserId,
+            Long listingId
+    ) {
+        return changeOwnedListingStatus(
+                authenticatedUserId,
+                listingId,
+                ListingStatus.ACTIVE,
+                ListingStatus.INACTIVE,
+                "Only an active listing can be made inactive."
+        );
+    }
+
+    @Transactional
+    public ListingStatusUpdateResponse reactivateListing(
+            Long authenticatedUserId,
+            Long listingId
+    ) {
+        return changeOwnedListingStatus(
+                authenticatedUserId,
+                listingId,
+                ListingStatus.INACTIVE,
+                ListingStatus.ACTIVE,
+                "Only an inactive listing can be reactivated."
+        );
+    }
+
+    @Transactional
+    public ListingStatusUpdateResponse deleteListing(
+            Long authenticatedUserId,
+            Long listingId
+    ) {
+        loadActiveStudent(authenticatedUserId);
+        Listing listing = requireOwnedListing(authenticatedUserId, listingId);
+        if (listing.getStatus() == ListingStatus.DELETED) {
+            throw new ResourceNotFoundException("Listing was not found.");
+        }
+        listing.changeStatus(ListingStatus.DELETED);
+        listingRepository.save(listing);
+        notifyListingStatus(listing, ListingStatus.DELETED);
+        return new ListingStatusUpdateResponse(
+                listing.getId(),
+                listing.getStatus().name(),
+                listing.getUpdatedAt()
+        );
+    }
+
+    @Transactional
     public ProductDetailsResponse getListing(
             Long authenticatedUserId,
             Long listingId
@@ -277,8 +480,10 @@ public class MarketplaceService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "This listing is unavailable in your college marketplace."
                 ));
+        boolean ownListing = listing.getSeller().getId().equals(user.getId());
         if (listing.getStatus() != ListingStatus.ACTIVE
-                && listing.getStatus() != ListingStatus.SOLD) {
+                && listing.getStatus() != ListingStatus.SOLD
+                && !(ownListing && listing.getStatus() == ListingStatus.INACTIVE)) {
             throw new ResourceNotFoundException("This listing is no longer available.");
         }
 
@@ -288,8 +493,10 @@ public class MarketplaceService {
         int trust = trustScore == null ? 0 : trustScore.getScore();
         ProfilePrivacySettings privacy = privacyRepository.findByUserId(seller.getId())
                 .orElse(null);
-        boolean ownListing = seller.getId().equals(user.getId());
         boolean active = listing.getStatus() == ListingStatus.ACTIVE;
+        if (active && !ownListing) {
+            listing.recordView();
+        }
         List<Listing> similar = listingRepository
                 .findTop4ByCollegeIdAndCategoryIgnoreCaseAndStatusAndIdNotAndSeller_StatusOrderByCreatedAtDesc(
                         listing.getCollege().getId(),
@@ -356,6 +563,204 @@ public class MarketplaceService {
         );
     }
 
+    private SellerStats getSellerStats(Long sellerId) {
+        return new SellerStats(
+                listingRepository.countBySellerIdAndStatusNot(
+                        sellerId,
+                        ListingStatus.DELETED
+                ),
+                listingRepository.countBySellerIdAndStatus(
+                        sellerId,
+                        ListingStatus.ACTIVE
+                ),
+                listingRepository.countBySellerIdAndStatus(
+                        sellerId,
+                        ListingStatus.SOLD
+                ),
+                listingRepository.countBySellerIdAndStatus(
+                        sellerId,
+                        ListingStatus.INACTIVE
+                ),
+                listingRepository.sumViewsBySellerIdExcludingStatus(
+                        sellerId,
+                        ListingStatus.DELETED
+                ),
+                wishlistRepository.countSellerListingSaves(
+                        sellerId,
+                        ListingStatus.DELETED
+                )
+        );
+    }
+
+    private MyListingSummary toMyListingSummary(Listing listing) {
+        return new MyListingSummary(
+                listing.getId(),
+                listing.getTitle(),
+                listing.getPrice(),
+                listing.getCategory(),
+                listing.getCondition().name(),
+                listing.getPickupLocation(),
+                listing.getStatus().name(),
+                listing.getPrimaryImageUrl(),
+                listing.getViewCount(),
+                wishlistRepository.countByListingId(listing.getId()),
+                listing.getCreatedAt(),
+                listing.getUpdatedAt(),
+                listing.isNegotiable()
+        );
+    }
+
+    private MyListingDetailsResponse toMyListingDetails(Listing listing) {
+        return new MyListingDetailsResponse(
+                listing.getId(),
+                listing.getTitle(),
+                listing.getDescription(),
+                listing.getCategory(),
+                listing.getPrice(),
+                listing.getCondition().name(),
+                listing.getPickupLocation(),
+                listing.isNegotiable(),
+                listing.getAvailableQuantity(),
+                listing.getAdditionalNotes(),
+                listing.getStatus().name(),
+                listing.getCollege().getName(),
+                listing.getSeller().getFullName(),
+                listingImageUrls(listing),
+                listing.getViewCount(),
+                wishlistRepository.countByListingId(listing.getId()),
+                listing.getCreatedAt(),
+                listing.getUpdatedAt()
+        );
+    }
+
+    private List<String> listingImageUrls(Listing listing) {
+        List<String> imageUrls = listingImageRepository
+                .findAllByListingIdOrderByDisplayOrderAsc(listing.getId())
+                .stream()
+                .map(ListingImage::getImageUrl)
+                .toList();
+        if (imageUrls.isEmpty() && hasText(listing.getPrimaryImageUrl())) {
+            return List.of(listing.getPrimaryImageUrl());
+        }
+        return imageUrls;
+    }
+
+    private Listing requireOwnedListing(Long sellerId, Long listingId) {
+        return listingRepository.findMarketplaceListingById(listingId)
+                .filter(listing -> listing.getSeller().getId().equals(sellerId))
+                .filter(listing -> listing.getStatus() != ListingStatus.DELETED)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing was not found."));
+    }
+
+    private ListingStatusUpdateResponse changeOwnedListingStatus(
+            Long authenticatedUserId,
+            Long listingId,
+            ListingStatus expectedStatus,
+            ListingStatus targetStatus,
+            String invalidStatusMessage
+    ) {
+        loadActiveStudent(authenticatedUserId);
+        Listing listing = requireOwnedListing(authenticatedUserId, listingId);
+        if (listing.getStatus() == targetStatus) {
+            return new ListingStatusUpdateResponse(
+                    listing.getId(),
+                    listing.getStatus().name(),
+                    listing.getUpdatedAt()
+            );
+        }
+        if (listing.getStatus() != expectedStatus) {
+            throw new BadRequestException(invalidStatusMessage);
+        }
+        listing.changeStatus(targetStatus);
+        listingRepository.save(listing);
+        notifyListingStatus(listing, targetStatus);
+        return new ListingStatusUpdateResponse(
+                listing.getId(),
+                listing.getStatus().name(),
+                listing.getUpdatedAt()
+        );
+    }
+
+    private void replaceListingImages(
+            Listing listing,
+            List<MultipartFile> replacementImages
+    ) {
+        List<ListingImage> currentImages = listingImageRepository
+                .findAllByListingIdOrderByDisplayOrderAsc(listing.getId());
+        List<StoredListingImage> storedImages = new ArrayList<>();
+        try {
+            for (int index = 0; index < replacementImages.size(); index++) {
+                StoredListingImage stored = listingImageStorage.store(
+                        listing.getId(),
+                        replacementImages.get(index)
+                );
+                storedImages.add(stored);
+            }
+
+            listingImageRepository.deleteAll(currentImages);
+            listingImageRepository.flush();
+            for (int index = 0; index < storedImages.size(); index++) {
+                StoredListingImage stored = storedImages.get(index);
+                listingImageRepository.save(new ListingImage(
+                        listing,
+                        stored.publicUrl(),
+                        stored.fileName(),
+                        index
+                ));
+            }
+            listing.updatePrimaryImageUrl(storedImages.getFirst().publicUrl());
+            listingImageRepository.flush();
+
+            List<String> oldFileNames = currentImages.stream()
+                    .map(ListingImage::getStorageFileName)
+                    .toList();
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            oldFileNames.forEach(listingImageStorage::delete);
+                        }
+                    }
+            );
+        } catch (RuntimeException exception) {
+            storedImages.forEach(image -> listingImageStorage.delete(image.fileName()));
+            throw exception;
+        }
+    }
+
+    private void notifyListingStatus(Listing listing, ListingStatus status) {
+        String title = switch (status) {
+            case SOLD -> "Listing marked sold";
+            case INACTIVE -> "Listing marked inactive";
+            case ACTIVE -> "Listing reactivated";
+            case DELETED -> "Listing removed";
+            default -> "Listing updated";
+        };
+        String message = switch (status) {
+            case SOLD -> "Your listing " + listing.getTitle() + " has been marked sold.";
+            case INACTIVE ->
+                    "Your listing " + listing.getTitle() + " is now inactive.";
+            case ACTIVE -> "Your listing " + listing.getTitle() + " is active again.";
+            case DELETED -> "Your listing " + listing.getTitle() + " was removed.";
+            default -> "Your listing " + listing.getTitle() + " was updated.";
+        };
+        notificationService.notify(
+                listing.getSeller(),
+                NotificationType.LISTING,
+                NotificationPriority.MEDIUM,
+                title,
+                message,
+                RelatedEntityType.LISTING,
+                listing.getId(),
+                "/student/my-marketplace"
+        );
+        if (status == ListingStatus.SOLD) {
+            notificationService.notifyWishlistUnavailable(listing, true);
+        } else if (status == ListingStatus.INACTIVE || status == ListingStatus.DELETED) {
+            notificationService.notifyWishlistUnavailable(listing, false);
+        }
+    }
+
     private List<MarketplaceListingResponse> mapListings(
             Long authenticatedUserId,
             List<Listing> listings
@@ -407,6 +812,85 @@ public class MarketplaceService {
                     );
                 })
                 .toList();
+    }
+
+    private Specification<Listing> myListingSpecification(
+            Long sellerId,
+            String search,
+            ListingStatus status,
+            String category,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            ItemCondition condition,
+            String pickupLocation,
+            Instant postedAfter,
+            boolean wishlistedFirst
+    ) {
+        return (root, query, builder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(builder.equal(root.get("seller").get("id"), sellerId));
+            predicates.add(builder.notEqual(root.get("status"), ListingStatus.DELETED));
+
+            String normalizedSearch = normalize(search);
+            if (normalizedSearch != null) {
+                String likeSearch = "%" + normalizedSearch.toLowerCase(Locale.ROOT) + "%";
+                predicates.add(builder.or(
+                        builder.like(builder.lower(root.get("title")), likeSearch),
+                        builder.like(builder.lower(root.get("category")), likeSearch),
+                        builder.like(builder.lower(root.get("pickupLocation")), likeSearch)
+                ));
+            }
+            if (status != null) {
+                predicates.add(builder.equal(root.get("status"), status));
+            }
+
+            String normalizedCategory = normalize(category);
+            if (normalizedCategory != null) {
+                predicates.add(builder.equal(
+                        builder.lower(root.get("category")),
+                        normalizedCategory.toLowerCase(Locale.ROOT)
+                ));
+            }
+            if (minPrice != null) {
+                predicates.add(builder.greaterThanOrEqualTo(root.get("price"), minPrice));
+            }
+            if (maxPrice != null) {
+                predicates.add(builder.lessThanOrEqualTo(root.get("price"), maxPrice));
+            }
+            if (condition != null) {
+                predicates.add(builder.equal(root.get("condition"), condition));
+            }
+
+            String normalizedPickup = normalize(pickupLocation);
+            if (normalizedPickup != null) {
+                predicates.add(builder.like(
+                        builder.lower(root.get("pickupLocation")),
+                        "%" + normalizedPickup.toLowerCase(Locale.ROOT) + "%"
+                ));
+            }
+            if (postedAfter != null) {
+                predicates.add(builder.greaterThanOrEqualTo(root.get("createdAt"), postedAfter));
+            }
+
+            if (wishlistedFirst
+                    && query.getResultType() != Long.class
+                    && query.getResultType() != long.class) {
+                Subquery<Long> saveCount = query.subquery(Long.class);
+                Root<WishlistItem> wishlistItem = saveCount.from(WishlistItem.class);
+                saveCount.select(builder.count(wishlistItem));
+                saveCount.where(builder.equal(
+                        wishlistItem.get("listing").get("id"),
+                        root.get("id")
+                ));
+                query.orderBy(
+                        builder.desc(saveCount),
+                        builder.desc(root.get("createdAt")),
+                        builder.desc(root.get("id"))
+                );
+            }
+
+            return builder.and(predicates.toArray(Predicate[]::new));
+        };
     }
 
     private Specification<Listing> marketplaceSpecification(
@@ -554,6 +1038,23 @@ public class MarketplaceService {
         );
     }
 
+    private void validateUpdateRequest(
+            CreateListingRequest request,
+            List<MultipartFile> replacementImages
+    ) {
+        if (!CATEGORIES.contains(request.category().trim())) {
+            throw new BadRequestException("Please select a supported listing category.");
+        }
+        if (replacementImages != null && replacementImages.size() > MAX_LISTING_IMAGES) {
+            throw new BadRequestException("A listing can contain at most 5 images.");
+        }
+        validateAllowedContent(
+                request.title(),
+                request.description(),
+                request.additionalNotes()
+        );
+    }
+
     private void validateAllowedContent(String... values) {
         String content = String.join(
                 " ",
@@ -590,6 +1091,24 @@ public class MarketplaceService {
             );
         } catch (IllegalArgumentException exception) {
             throw new BadRequestException("Unsupported item condition.");
+        }
+    }
+
+    private ListingStatus parseSellerStatus(String status) {
+        String normalized = normalize(status);
+        if (normalized == null || normalized.equalsIgnoreCase("all")) {
+            return null;
+        }
+        try {
+            ListingStatus parsed = ListingStatus.valueOf(
+                    normalized.toUpperCase(Locale.ROOT).replace(' ', '_')
+            );
+            if (parsed == ListingStatus.DELETED || parsed == ListingStatus.RESERVED) {
+                throw new IllegalArgumentException();
+            }
+            return parsed;
+        } catch (IllegalArgumentException exception) {
+            throw new BadRequestException("Unsupported listing status filter.");
         }
     }
 
@@ -632,6 +1151,42 @@ public class MarketplaceService {
             case "trusted", "mosttrusted", "most_trusted" ->
                     new MarketplaceSort(Sort.unsorted(), true);
             default -> throw new BadRequestException("Unsupported marketplace sort option.");
+        };
+    }
+
+    private SellerListingSort parseSellerSort(String sortBy) {
+        String normalized = normalize(sortBy);
+        if (normalized == null || normalized.equalsIgnoreCase("newest")) {
+            return new SellerListingSort(
+                    Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")),
+                    false
+            );
+        }
+        return switch (normalized.toLowerCase(Locale.ROOT)) {
+            case "priceasc", "price_asc" -> new SellerListingSort(
+                    Sort.by(
+                            Sort.Order.asc("price"),
+                            Sort.Order.desc("createdAt")
+                    ),
+                    false
+            );
+            case "pricedesc", "price_desc" -> new SellerListingSort(
+                    Sort.by(
+                            Sort.Order.desc("price"),
+                            Sort.Order.desc("createdAt")
+                    ),
+                    false
+            );
+            case "mostviewed", "most_viewed" -> new SellerListingSort(
+                    Sort.by(
+                            Sort.Order.desc("viewCount"),
+                            Sort.Order.desc("createdAt")
+                    ),
+                    false
+            );
+            case "mostwishlisted", "most_wishlisted" ->
+                    new SellerListingSort(Sort.unsorted(), true);
+            default -> throw new BadRequestException("Unsupported seller listing sort option.");
         };
     }
 
@@ -685,5 +1240,8 @@ public class MarketplaceService {
     }
 
     private record MarketplaceSort(Sort sort, boolean trustedSellersFirst) {
+    }
+
+    private record SellerListingSort(Sort sort, boolean wishlistedFirst) {
     }
 }

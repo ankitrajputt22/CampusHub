@@ -7,6 +7,11 @@ import com.campushub.auth.dto.LoginRequest;
 import com.campushub.auth.dto.LoginResponse;
 import com.campushub.auth.dto.OtpResendRequest;
 import com.campushub.auth.dto.OtpSendResponse;
+import com.campushub.auth.dto.PasswordResetCompleteRequest;
+import com.campushub.auth.dto.PasswordResetStartRequest;
+import com.campushub.auth.dto.PasswordResetStartResponse;
+import com.campushub.auth.dto.PasswordResetVerifyRequest;
+import com.campushub.auth.dto.PasswordResetVerifyResponse;
 import com.campushub.auth.dto.RefreshTokenRequest;
 import com.campushub.auth.dto.SignupStartRequest;
 import com.campushub.auth.dto.SignupStartResponse;
@@ -14,6 +19,7 @@ import com.campushub.auth.dto.SignupVerifyRequest;
 import com.campushub.auth.dto.SignupVerifyResponse;
 import com.campushub.auth.model.OtpChannel;
 import com.campushub.auth.service.LoginService;
+import com.campushub.auth.service.PasswordResetService;
 import com.campushub.auth.service.RefreshTokenService;
 import com.campushub.auth.service.SignupService;
 import com.campushub.common.api.ApiResponse;
@@ -34,15 +40,18 @@ public class AuthController {
     private final SignupService signupService;
     private final LoginService loginService;
     private final RefreshTokenService refreshTokenService;
+    private final PasswordResetService passwordResetService;
 
     public AuthController(
             SignupService signupService,
             LoginService loginService,
-            RefreshTokenService refreshTokenService
+            RefreshTokenService refreshTokenService,
+            PasswordResetService passwordResetService
     ) {
         this.signupService = signupService;
         this.loginService = loginService;
         this.refreshTokenService = refreshTokenService;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping("/check-email")
@@ -111,5 +120,36 @@ public class AuthController {
         }
         refreshTokenService.revokeAllForUser(authenticatedUser.userId());
         return ApiResponse.success("Logged out from all devices successfully.", null);
+    }
+
+    @PostMapping("/password-reset/request")
+    public ApiResponse<PasswordResetStartResponse> requestPasswordReset(
+            @Valid @RequestBody PasswordResetStartRequest request
+    ) {
+        return ApiResponse.success(
+                "If an active verified account exists, a recovery code has been issued.",
+                passwordResetService.start(request)
+        );
+    }
+
+    @PostMapping("/password-reset/verify")
+    public ApiResponse<PasswordResetVerifyResponse> verifyPasswordReset(
+            @Valid @RequestBody PasswordResetVerifyRequest request
+    ) {
+        return ApiResponse.success(
+                "Recovery code verified",
+                passwordResetService.verify(request)
+        );
+    }
+
+    @PostMapping("/password-reset/complete")
+    public ApiResponse<Void> completePasswordReset(
+            @Valid @RequestBody PasswordResetCompleteRequest request
+    ) {
+        passwordResetService.complete(request);
+        return ApiResponse.success(
+                "Password reset successfully. Please sign in with your new password.",
+                null
+        );
     }
 }

@@ -30,37 +30,41 @@ const fallbackUser: CampusUser = {
   trustScore: 30,
 };
 
-export function saveCampusSession(session: CampusSession) {
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, session.accessToken);
-  window.localStorage.setItem(REFRESH_TOKEN_KEY, session.refreshToken);
-  window.localStorage.setItem(USER_KEY, JSON.stringify(session.user));
+export function saveCampusSession(session: CampusSession, persistent = true) {
+  clearCampusSession();
+  const storage = persistent ? window.localStorage : window.sessionStorage;
+  storage.setItem(ACCESS_TOKEN_KEY, session.accessToken);
+  storage.setItem(REFRESH_TOKEN_KEY, session.refreshToken);
+  storage.setItem(USER_KEY, JSON.stringify(session.user));
 }
 
 export function updateCampusUser(updates: Partial<CampusUser>) {
   const user = getStoredCampusUser();
   if (!user) return;
-  window.localStorage.setItem(
+  sessionStorageForUser()?.setItem(
     USER_KEY,
     JSON.stringify({ ...user, ...updates }),
   );
 }
 
 export function clearCampusSession() {
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-  window.localStorage.removeItem(USER_KEY);
+  for (const storage of [window.localStorage, window.sessionStorage]) {
+    storage.removeItem(ACCESS_TOKEN_KEY);
+    storage.removeItem(REFRESH_TOKEN_KEY);
+    storage.removeItem(USER_KEY);
+  }
 }
 
 export function getAccessToken() {
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  return getSessionValue(ACCESS_TOKEN_KEY);
 }
 
 export function setAccessToken(accessToken: string) {
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  sessionStorageForUser()?.setItem(ACCESS_TOKEN_KEY, accessToken);
 }
 
 export function getRefreshToken() {
-  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
+  return getSessionValue(REFRESH_TOKEN_KEY);
 }
 
 export function hasStudentSession() {
@@ -79,7 +83,7 @@ export function getCampusUser(): CampusUser {
 }
 
 function getStoredCampusUser(): CampusUser | null {
-  const storedUser = window.localStorage.getItem(USER_KEY);
+  const storedUser = getSessionValue(USER_KEY);
   if (!storedUser) return null;
 
   try {
@@ -105,4 +109,14 @@ function getStoredCampusUser(): CampusUser | null {
   } catch {
     return null;
   }
+}
+
+function getSessionValue(key: string) {
+  return window.sessionStorage.getItem(key) ?? window.localStorage.getItem(key);
+}
+
+function sessionStorageForUser(): Storage | null {
+  if (window.sessionStorage.getItem(USER_KEY)) return window.sessionStorage;
+  if (window.localStorage.getItem(USER_KEY)) return window.localStorage;
+  return null;
 }

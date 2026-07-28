@@ -1,6 +1,7 @@
 import {
   Bell,
   ChevronDown,
+  CircleDollarSign,
   Compass,
   Heart,
   LayoutDashboard,
@@ -9,7 +10,8 @@ import {
   Package,
   Plus,
   Search,
-  Settings,
+  ShieldCheck,
+  Star,
   ShoppingBag,
   Store,
   UserRound,
@@ -26,6 +28,7 @@ import {
 } from 'react-router-dom';
 
 import { logout as requestLogout } from '../../auth/api/authApi';
+import { NotificationBell } from '../../notifications/components/NotificationBell';
 import { StudentDashboardProvider } from '../dashboard/context/StudentDashboardProvider';
 import { useStudentDashboard } from '../dashboard/context/studentDashboardContext';
 import {
@@ -65,6 +68,16 @@ const primaryNav = [
     icon: ShoppingBag,
   },
   {
+    label: 'Payments',
+    to: '/student/payments',
+    icon: CircleDollarSign,
+  },
+  {
+    label: 'Reviews',
+    to: '/student/reviews',
+    icon: Star,
+  },
+  {
     label: 'Wishlist',
     to: '/student/wishlist',
     icon: Heart,
@@ -73,7 +86,7 @@ const primaryNav = [
 
 const accountNav = [
   { label: 'Profile', to: '/student/profile', icon: UserRound },
-  { label: 'Settings', to: '/student/settings', icon: Settings },
+  { label: 'Notifications', to: '/student/notifications', icon: Bell },
 ];
 
 export function StudentShell() {
@@ -210,7 +223,6 @@ function StudentShellFrame() {
         >
           <TopNavLink label="Dashboard" to="/student/dashboard" />
           <TopNavLink label="Marketplace" to="/student/marketplace" />
-          <TopNavLink label="Forum" to="/student/chat" />
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
@@ -220,13 +232,7 @@ function StudentShellFrame() {
             label="Wishlist"
             to="/student/wishlist"
           />
-          <HeaderIconLink
-            badge={unreadNotifications}
-            icon={Bell}
-            label="Notifications"
-            tone="red"
-            to="/student/notifications"
-          />
+          <NotificationBell initialUnreadCount={unreadNotifications} />
           <Link
             className="hidden h-10 items-center gap-2 rounded-lg bg-[#031635] px-4 text-sm font-bold text-white hover:bg-[#1a2b4b] sm:inline-flex"
             to="/student/sell"
@@ -272,10 +278,10 @@ function StudentShellFrame() {
                   to="/student/profile"
                 />
                 <ProfileMenuLink
-                  icon={Settings}
-                  label="Settings"
+                  icon={ShieldCheck}
+                  label="Privacy & security"
                   onClick={() => setProfileMenuOpen(false)}
-                  to="/student/settings"
+                  to="/student/profile#profile-security"
                 />
                 <button
                   className="flex w-full items-center gap-3 border-t border-[#e6e8ee] px-4 py-3 text-left text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
@@ -440,13 +446,11 @@ function HeaderIconLink({
   to,
   icon: Icon,
   badge,
-  tone = 'navy',
 }: {
   label: string;
   to: string;
-  icon: typeof Bell;
+  icon: typeof Heart;
   badge: number;
-  tone?: 'navy' | 'red';
 }) {
   return (
     <Link
@@ -457,9 +461,7 @@ function HeaderIconLink({
     >
       <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
       {badge > 0 && (
-        <span
-          className={`absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white ${tone === 'red' ? 'bg-[#ba1a1a]' : 'bg-[#00677f]'}`}
-        >
+        <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#00677f] px-1 text-[9px] font-bold text-white">
           {badge > 9 ? '9+' : badge}
         </span>
       )}

@@ -35,8 +35,8 @@ export function AuthUtilityLayout({
           <div className="mt-6">{children}</div>
         </section>
         <p className="mt-5 text-center text-xs leading-5 text-slate-400">
-          Test interface only. Password recovery backend delivery will be
-          connected later.
+          Recovery codes and reset links are short-lived and can be used only
+          once.
         </p>
       </div>
     </main>

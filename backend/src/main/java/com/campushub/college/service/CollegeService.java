@@ -2,6 +2,7 @@ package com.campushub.college.service;
 
 import com.campushub.college.dto.CollegeSummaryResponse;
 import com.campushub.college.model.College;
+import com.campushub.college.model.CollegeStatus;
 import com.campushub.college.repository.CollegeRepository;
 import com.campushub.common.exception.ResourceNotFoundException;
 import java.util.List;
@@ -20,7 +21,11 @@ public class CollegeService {
     @Transactional(readOnly = true)
     public List<CollegeSummaryResponse> search(String keyword) {
         String searchTerm = keyword == null || keyword.isBlank() ? "" : keyword.trim();
-        return collegeRepository.findTop25ByActiveTrueAndNameContainingIgnoreCaseOrderByNameAsc(searchTerm)
+        return collegeRepository
+                .findTop25ByActiveTrueAndStatusAndNameContainingIgnoreCaseOrderByNameAsc(
+                        CollegeStatus.ACTIVE,
+                        searchTerm
+                )
                 .stream()
                 .map(CollegeSummaryResponse::from)
                 .toList();
@@ -29,7 +34,7 @@ public class CollegeService {
     @Transactional(readOnly = true)
     public College getActiveCollege(Long collegeId) {
         return collegeRepository.findById(collegeId)
-                .filter(College::isActive)
+                .filter(College::isExplorable)
                 .orElseThrow(() -> new ResourceNotFoundException("Please select your college."));
     }
 }

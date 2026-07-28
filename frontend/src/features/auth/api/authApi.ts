@@ -67,6 +67,19 @@ export type LoginResponse = {
   user: AuthUser;
 };
 
+export type PasswordResetStartResponse = {
+  requestId: string;
+  expiresInSeconds: number;
+  resendAfterSeconds: number;
+  devOtp: string | null;
+};
+
+export type PasswordResetVerifyResponse = {
+  requestId: string;
+  resetToken: string;
+  expiresInSeconds: number;
+};
+
 type ApiResponse<T> = {
   success: boolean;
   message: string;
@@ -162,6 +175,29 @@ export async function login(payload: {
 
 export async function logout(refreshToken: string) {
   await apiClient.post('/auth/logout', { refreshToken });
+}
+
+export async function requestPasswordReset(email: string) {
+  const response = await apiClient.post<
+    ApiResponse<PasswordResetStartResponse>
+  >('/auth/password-reset/request', { email });
+  return response.data.data;
+}
+
+export async function verifyPasswordReset(requestId: string, otp: string) {
+  const response = await apiClient.post<
+    ApiResponse<PasswordResetVerifyResponse>
+  >('/auth/password-reset/verify', { requestId, otp });
+  return response.data.data;
+}
+
+export async function completePasswordReset(payload: {
+  requestId: string;
+  resetToken: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  await apiClient.post('/auth/password-reset/complete', payload);
 }
 
 export function getApiErrorMessage(error: unknown) {

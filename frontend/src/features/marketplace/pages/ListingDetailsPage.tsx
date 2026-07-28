@@ -12,8 +12,15 @@ import {
   Tag,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
+import {
+  recordRazorpayFailure,
+  verifyRazorpayPayment,
+} from '../../payments/api/paymentsApi';
+import { openRazorpayCheckout } from '../../payments/lib/razorpayCheckout';
+import { useStudentDashboard } from '../../student/dashboard/context/studentDashboardContext';
+import { getExploreListing } from '../api/exploreApi';
 import {
   addListingToWishlist,
   getMarketplaceListing,
@@ -36,7 +43,13 @@ import {
   relativeTime,
 } from '../lib/marketplaceFormatters';
 
-export function ListingDetailsPage() {
+export function ListingDetailsPage({
+  exploreMode = false,
+}: {
+  exploreMode?: boolean;
+}) {
+  const navigate = useNavigate();
+  const { data: dashboard, refresh: refreshDashboard } = useStudentDashboard();
   const { id } = useParams();
   const listingId = Number(id);
   const [product, setProduct] = useState<ProductDetails | null>(null);
@@ -51,6 +64,9 @@ export function ListingDetailsPage() {
   const [buyOpen, setBuyOpen] = useState(false);
   const [buyBusy, setBuyBusy] = useState(false);
   const [buyError, setBuyError] = useState<string | null>(null);
+  const [buyPhase, setBuyPhase] = useState(
+    'Create order and open secure checkout',
+  );
   const [order, setOrder] = useState<OrderInitiation | null>(null);
 
   useEffect(() => {
@@ -65,7 +81,8 @@ export function ListingDetailsPage() {
     setError(null);
     setReportSuccess(false);
     setOrder(null);
-    void getMarketplaceListing(listingId, controller.signal)
+    const loadListing = exploreMode ? getExploreListing : getMarketplaceListing;
+    void loadListing(listingId, controller.signal)
       .then(setProduct)
       .catch((requestError: unknown) => {
         if (!controller.signal.aborted) {
@@ -78,10 +95,11 @@ export function ListingDetailsPage() {
       });
 
     return () => controller.abort();
-  }, [listingId, reloadKey]);
+  }, [exploreMode, listingId, reloadKey]);
 
   async function toggleWishlist(listing: MarketplaceListing) {
-    if (listing.ownListing || wishlistBusyIds.has(listing.id)) return;
+    if (exploreMode || listing.ownListing || wishlistBusyIds.has(listing.id))
+      return;
     const wasWishlisted = listing.wishlisted;
     setError(null);
     setWishlistBusyIds((current) => new Set(current).add(listing.id));
@@ -135,11 +153,34 @@ export function ListingDetailsPage() {
     setBuyBusy(true);
     setBuyError(null);
     try {
-      setOrder(await initiateMarketplaceOrder(product.id));
+      setBuyPhase('Creating payment order...');
+      const checkout = await initiateMarketplaceOrder(product.id);
+      setOrder(checkout);
+      setBuyPhase('Opening Razorpay Checkout...');
+      const outcome = await openRazorpayCheckout(checkout);
+      if (outcome.type === 'dismissed') {
+        setBuyError(
+          'Payment was not completed. You can retry safely from Payments or Orders.',
+        );
+        return;
+      }
+      if (outcome.type === 'failed') {
+        await recordRazorpayFailure(checkout, outcome.response);
+        setBuyError('Payment failed. Please retry from Payments or Orders.');
+        void refreshDashboard();
+        return;
+      }
+      setBuyPhase('Verifying payment securely...');
+      await verifyRazorpayPayment(checkout, outcome.response);
+      await refreshDashboard();
+      navigate(`/student/orders/${checkout.order.id}`, {
+        state: { paymentVerified: true },
+      });
     } catch (requestError) {
       setBuyError(apiErrorMessage(requestError));
     } finally {
       setBuyBusy(false);
+      setBuyPhase('Create order and open secure checkout');
     }
   }
 
@@ -164,6 +205,12 @@ export function ListingDetailsPage() {
   }
 
   const active = product.status === 'ACTIVE';
+  const marketplacePath = exploreMode
+    ? `/student/explore-colleges?collegeId=${product.college.id}`
+    : '/student/marketplace';
+  const categoryPath = exploreMode
+    ? `${marketplacePath}&search=${encodeURIComponent(product.category)}`
+    : `/student/marketplace?search=${encodeURIComponent(product.category)}`;
 
   return (
     <div className="pb-10">
@@ -173,17 +220,17 @@ export function ListingDetailsPage() {
       >
         <Link
           className="inline-flex items-center gap-2 font-bold text-[#007b95] hover:text-[#005d72]"
-          to="/student/marketplace"
+          to={marketplacePath}
         >
           <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          My College Marketplace
+          {exploreMode ? product.college.name : 'My College Marketplace'}
         </Link>
         <span aria-hidden="true" className="text-[#a0a9b6]">
           /
         </span>
         <Link
           className="font-semibold text-[#526176] hover:text-[#007b95]"
-          to={`/student/marketplace?search=${encodeURIComponent(product.category)}`}
+          to={categoryPath}
         >
           {product.category}
         </Link>
@@ -208,6 +255,18 @@ export function ListingDetailsPage() {
           onDismiss={() => setReportSuccess(false)}
           tone="success"
         />
+      )}
+      {exploreMode && (
+        <div
+          className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"
+          role="status"
+        >
+          <strong>Browsing another verified college.</strong> This listing is
+          from {product.college.name}, not{' '}
+          {dashboard?.user.collegeName ?? 'your verified college'}. Your
+          verified college does not change, and cross-college buying,
+          wishlisting, payments, orders, and direct messaging are unavailable.
+        </div>
       )}
       {!active && (
         <div
@@ -267,7 +326,11 @@ export function ListingDetailsPage() {
             <ul className="mt-3 space-y-2 text-sm leading-6 text-emerald-900">
               <li>Meet in a public, well-lit campus area.</li>
               <li>Inspect the item before confirming handover.</li>
-              <li>Keep payment and order confirmation inside Campus Hub.</li>
+              <li>
+                {exploreMode
+                  ? 'Do not arrange cross-college payments or orders outside Campus Hub.'
+                  : 'Keep payment and order confirmation inside Campus Hub.'}
+              </li>
             </ul>
           </section>
         </div>
@@ -343,7 +406,7 @@ export function ListingDetailsPage() {
               >
                 Manage your listing
               </Link>
-            ) : active ? (
+            ) : active && product.canBuy ? (
               <div className="mt-6 space-y-3">
                 <button
                   className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#031635] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#153557]"
@@ -382,6 +445,31 @@ export function ListingDetailsPage() {
                   </button>
                 )}
               </div>
+            ) : active ? (
+              <div className="mt-6 space-y-3">
+                <button
+                  className="inline-flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-[#dce3ec] px-5 text-sm font-bold text-[#677587]"
+                  disabled
+                  type="button"
+                >
+                  <ShoppingBag aria-hidden="true" className="h-4 w-4" />
+                  Buying from other colleges is not available yet
+                </button>
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-semibold leading-5 text-amber-900">
+                  Browse product and seller details safely. No order or payment
+                  can be created for this listing.
+                </p>
+                {product.canReport && (
+                  <button
+                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-[#687587] hover:bg-rose-50 hover:text-rose-700"
+                    onClick={() => setReportOpen(true)}
+                    type="button"
+                  >
+                    <Flag aria-hidden="true" className="h-4 w-4" />
+                    Report listing
+                  </button>
+                )}
+              </div>
             ) : (
               <button
                 className="mt-6 h-12 w-full cursor-not-allowed rounded-xl bg-[#d9dee7] text-sm font-bold text-[#778395]"
@@ -403,6 +491,7 @@ export function ListingDetailsPage() {
         listings={product.similarListings}
         onWishlistChange={toggleWishlist}
         wishlistBusyIds={wishlistBusyIds}
+        exploreCollegeId={exploreMode ? product.college.id : undefined}
       />
 
       <ReportListingModal
@@ -411,15 +500,18 @@ export function ListingDetailsPage() {
         open={reportOpen}
         productTitle={product.title}
       />
-      <BuyNowModal
-        error={buyError}
-        onClose={closeBuyDialog}
-        onConfirm={createOrder}
-        open={buyOpen}
-        order={order}
-        product={product}
-        submitting={buyBusy}
-      />
+      {product.canBuy && (
+        <BuyNowModal
+          error={buyError}
+          onClose={closeBuyDialog}
+          onConfirm={createOrder}
+          open={buyOpen}
+          order={order}
+          submittingLabel={buyPhase}
+          product={product}
+          submitting={buyBusy}
+        />
+      )}
     </div>
   );
 }

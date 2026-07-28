@@ -4,6 +4,7 @@ import com.campushub.listing.model.Listing;
 import com.campushub.listing.model.ListingStatus;
 import com.campushub.user.model.AccountStatus;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -22,6 +23,19 @@ public interface ListingRepository
     long countBySellerIdAndStatus(Long sellerId, ListingStatus status);
 
     long countBySellerIdAndStatusNot(Long sellerId, ListingStatus status);
+
+    long countByCollegeIdAndStatusAndSeller_Status(
+            Long collegeId,
+            ListingStatus status,
+            AccountStatus sellerStatus
+    );
+
+    long countByCollegeIdAndStatusAndSeller_StatusAndCreatedAtAfter(
+            Long collegeId,
+            ListingStatus status,
+            AccountStatus sellerStatus,
+            Instant createdAfter
+    );
 
     boolean existsBySellerIdAndTitleIgnoreCase(Long sellerId, String title);
 
@@ -76,5 +90,20 @@ public interface ListingRepository
     List<String> findPickupLocations(
             @Param("collegeId") Long collegeId,
             @Param("status") ListingStatus status
+    );
+
+    @Query("""
+            select listing.category, count(listing)
+            from Listing listing
+            where listing.college.id = :collegeId
+              and listing.status = :listingStatus
+              and listing.seller.status = :sellerStatus
+            group by listing.category
+            order by count(listing) desc, listing.category asc
+            """)
+    List<Object[]> findPopularCategories(
+            @Param("collegeId") Long collegeId,
+            @Param("listingStatus") ListingStatus listingStatus,
+            @Param("sellerStatus") AccountStatus sellerStatus
     );
 }

@@ -13,11 +13,17 @@ export function CollegeListingCard({
   listing,
   wishlistBusy,
   onWishlistChange,
+  wishlistEnabled = true,
+  detailsBasePath = '/listing',
 }: {
   listing: MarketplaceListing;
   wishlistBusy: boolean;
   onWishlistChange: (listing: MarketplaceListing) => void;
+  wishlistEnabled?: boolean;
+  detailsBasePath?: string;
 }) {
+  const detailsPath = `${detailsBasePath}/${listing.id}`;
+
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-[#dfe3eb] bg-white shadow-[0_2px_10px_rgba(3,22,53,0.05)] transition hover:-translate-y-0.5 hover:border-[#b9c4d3] hover:shadow-[0_10px_24px_rgba(3,22,53,0.09)]">
       <div className="relative aspect-[4/3] overflow-hidden bg-[#eff4ff]">
@@ -28,6 +34,10 @@ export function CollegeListingCard({
         {listing.ownListing ? (
           <span className="absolute right-3 top-3 rounded-md bg-[#031635] px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm">
             Your listing
+          </span>
+        ) : !wishlistEnabled ? (
+          <span className="absolute right-3 top-3 rounded-md bg-[#17385e] px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm">
+            Browse only
           </span>
         ) : (
           <button
@@ -73,7 +83,7 @@ export function CollegeListingCard({
 
         <Link
           className="mt-2 line-clamp-2 min-h-12 text-[16px] font-extrabold leading-6 text-[#071b33] hover:text-[#007b95]"
-          to={`/listing/${listing.id}`}
+          to={detailsPath}
         >
           {listing.title}
         </Link>
@@ -110,7 +120,7 @@ export function CollegeListingCard({
           </div>
           <Link
             className="shrink-0 rounded-lg bg-[#031635] px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#153557]"
-            to={`/listing/${listing.id}`}
+            to={detailsPath}
           >
             View details
           </Link>

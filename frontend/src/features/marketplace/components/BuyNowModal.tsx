@@ -16,6 +16,7 @@ export function BuyNowModal({
   submitting,
   order,
   error,
+  submittingLabel,
   onClose,
   onConfirm,
 }: {
@@ -24,6 +25,7 @@ export function BuyNowModal({
   submitting: boolean;
   order: OrderInitiation | null;
   error: string | null;
+  submittingLabel: string;
   onClose: () => void;
   onConfirm: () => void;
 }) {
@@ -67,27 +69,35 @@ export function BuyNowModal({
               <CheckCircle2 aria-hidden="true" className="h-8 w-8" />
             </span>
             <p className="mt-4 font-black text-[#10233d]">
-              Order #{order.orderId}
+              {order.order.orderNumber}
             </p>
             <p className="mt-2 text-sm leading-6 text-[#667386]">
-              The backend rechecked this listing and created a pending-payment
-              order. Payment processing remains a separate secure step.
+              Your Campus Hub order is safely pending. Only backend signature
+              verification can mark it paid.
             </p>
             <div className="mt-5 rounded-xl bg-[#f3f7fd] px-4 py-3 text-left">
               <p className="line-clamp-1 text-sm font-bold text-[#21344c]">
-                {order.listingTitle}
+                {order.order.listingTitle}
               </p>
               <p className="mt-1 text-lg font-black text-[#031635]">
-                {formatPrice(order.amount)}
+                {formatPrice(order.order.amount)}
               </p>
             </div>
             <Link
               className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#031635] px-4 text-sm font-bold text-white hover:bg-[#153557]"
-              to={`/student/payments?orderId=${order.orderId}`}
+              to={`/student/payments?orderId=${order.order.id}`}
             >
               <CreditCard aria-hidden="true" className="h-4 w-4" />
               Continue to payments
             </Link>
+            {error && (
+              <p
+                className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-sm text-amber-900"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
           </div>
         ) : (
           <>
@@ -133,7 +143,7 @@ export function BuyNowModal({
                 onClick={onConfirm}
                 type="button"
               >
-                {submitting ? 'Checking listing...' : 'Create order'}
+                {submitting ? submittingLabel : 'Create order and pay securely'}
               </button>
             </div>
           </>

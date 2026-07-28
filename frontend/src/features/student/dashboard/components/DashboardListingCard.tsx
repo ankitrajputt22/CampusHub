@@ -74,10 +74,9 @@ export function DashboardListingCard({
 
         <Link
           className="mt-4 inline-flex h-11 items-center justify-center rounded-lg border border-[#031635] text-sm font-semibold text-[#031635] hover:bg-[#031635] hover:text-white"
-          state={{ listingId: listing.id, listingTitle: listing.title }}
-          to="/student/chat"
+          to={`/listing/${listing.id}`}
         >
-          Interested
+          View item
         </Link>
       </div>
     </article>

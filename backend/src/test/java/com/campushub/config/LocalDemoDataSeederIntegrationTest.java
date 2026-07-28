@@ -30,10 +30,13 @@ import org.springframework.test.context.TestPropertySource;
 class LocalDemoDataSeederIntegrationTest {
 
     private static final String TEST_PASSWORD = "Aa1@" + UUID.randomUUID();
+    private static final String TEST_JWT_SECRET =
+            UUID.randomUUID() + UUID.randomUUID().toString();
 
     @DynamicPropertySource
     static void demoPassword(DynamicPropertyRegistry registry) {
         registry.add("app.demo-data.password", () -> TEST_PASSWORD);
+        registry.add("app.security.jwt-secret", () -> TEST_JWT_SECRET);
     }
 
     @Autowired
@@ -58,15 +61,19 @@ class LocalDemoDataSeederIntegrationTest {
         assertTrue(priya.isEmailVerified());
         assertTrue(priya.isPhoneVerified());
         assertTrue(passwordEncoder.matches(TEST_PASSWORD, priya.getPasswordHash()));
-        assertEquals(4, userRepository.count());
-        assertEquals(12, listingRepository.count());
-        assertEquals(10, listingRepository.findAll().stream()
+        User crossCollegeSeller = userRepository.findByEmailIgnoreCase(
+                "demo.mira@iitb.ac.in"
+        ).orElseThrow();
+        assertEquals(2L, crossCollegeSeller.getCollege().getId());
+        assertEquals(7, userRepository.count());
+        assertEquals(18, listingRepository.count());
+        assertEquals(16, listingRepository.findAll().stream()
                 .filter(listing -> listing.getStatus() == ListingStatus.ACTIVE)
                 .count());
 
         seeder.run(null);
 
-        assertEquals(4, userRepository.count());
-        assertEquals(12, listingRepository.count());
+        assertEquals(7, userRepository.count());
+        assertEquals(18, listingRepository.count());
     }
 }

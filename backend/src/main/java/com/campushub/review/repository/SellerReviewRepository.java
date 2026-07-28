@@ -11,9 +11,29 @@ public interface SellerReviewRepository extends JpaRepository<SellerReview, Long
 
     long countByRevieweeId(Long revieweeId);
 
+    long countByReviewerId(Long reviewerId);
+
+    boolean existsByOrderId(Long orderId);
+
     @Query("select coalesce(avg(review.rating), 0) from SellerReview review where review.reviewee.id = :revieweeId")
     double averageRatingByRevieweeId(@Param("revieweeId") Long revieweeId);
 
     @EntityGraph(attributePaths = "reviewer")
     List<SellerReview> findTop5ByRevieweeIdOrderByCreatedAtDesc(Long revieweeId);
+
+    @EntityGraph(attributePaths = {
+            "order",
+            "order.listing",
+            "reviewer",
+            "reviewee"
+    })
+    List<SellerReview> findAllByRevieweeIdOrderByCreatedAtDesc(Long revieweeId);
+
+    @EntityGraph(attributePaths = {
+            "order",
+            "order.listing",
+            "reviewer",
+            "reviewee"
+    })
+    List<SellerReview> findAllByReviewerIdOrderByCreatedAtDesc(Long reviewerId);
 }

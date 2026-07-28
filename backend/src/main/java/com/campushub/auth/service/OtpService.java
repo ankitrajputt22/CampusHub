@@ -48,7 +48,7 @@ public class OtpService {
         return otp;
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = BadRequestException.class)
     public void verifyOtp(Long userId, OtpChannel channel, String otp) {
         OtpVerification verification = otpVerificationRepository
                 .findTopByUserIdAndChannelAndUsedAtIsNullOrderByCreatedAtDesc(userId, channel)

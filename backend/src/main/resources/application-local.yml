@@ -14,10 +14,12 @@ spring:
 
 app:
   security:
-    jwt-secret: local-development-only-secret-change-before-production
+    jwt-secret: ${JWT_SECRET}
   otp:
     expose-dev-codes: true
   demo-data:
     enabled: ${CAMPUSHUB_DEMO_DATA_ENABLED:false}
     password: ${CAMPUSHUB_DEMO_DATA_PASSWORD:}
     college-code: ${CAMPUSHUB_DEMO_DATA_COLLEGE_CODE:RECMAINPURI}
+  razorpay:
+    mock-enabled: ${RAZORPAY_MOCK_ENABLED:true}

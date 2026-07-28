@@ -9,6 +9,10 @@ import com.campushub.listing.model.ListingStatus;
 import com.campushub.listing.repository.ListingRepository;
 import com.campushub.order.model.OrderStatus;
 import com.campushub.order.repository.MarketplaceOrderRepository;
+import com.campushub.notification.NotificationService;
+import com.campushub.notification.model.NotificationPriority;
+import com.campushub.notification.model.NotificationType;
+import com.campushub.notification.model.RelatedEntityType;
 import com.campushub.profile.dto.ChangePasswordRequest;
 import com.campushub.profile.dto.PrivacySettingsRequest;
 import com.campushub.profile.dto.ProfilePhotoResponse;
@@ -61,6 +65,7 @@ public class ProfileService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
     private final ProfilePhotoStorage photoStorage;
+    private final NotificationService notificationService;
 
     public ProfileService(
             UserRepository userRepository,
@@ -72,7 +77,8 @@ public class ProfileService {
             SellerReviewRepository reviewRepository,
             PasswordEncoder passwordEncoder,
             RefreshTokenService refreshTokenService,
-            ProfilePhotoStorage photoStorage
+            ProfilePhotoStorage photoStorage,
+            NotificationService notificationService
     ) {
         this.userRepository = userRepository;
         this.privacyRepository = privacyRepository;
@@ -84,6 +90,7 @@ public class ProfileService {
         this.passwordEncoder = passwordEncoder;
         this.refreshTokenService = refreshTokenService;
         this.photoStorage = photoStorage;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -172,6 +179,16 @@ public class ProfileService {
             throw new BadRequestException("New password must be different from your current password.");
         }
         user.changePasswordHash(passwordEncoder.encode(request.newPassword()));
+        notificationService.notify(
+                user,
+                NotificationType.SECURITY,
+                NotificationPriority.HIGH,
+                "Password changed",
+                "Your Campus Hub password was changed successfully.",
+                RelatedEntityType.PROFILE,
+                user.getId(),
+                "/student/profile"
+        );
         refreshTokenService.revokeAllForUser(user.getId());
     }
 

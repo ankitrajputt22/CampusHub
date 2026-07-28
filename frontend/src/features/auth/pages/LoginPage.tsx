@@ -32,6 +32,13 @@ export function LoginPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const successMessage =
+    typeof location.state === 'object' &&
+    location.state !== null &&
+    'message' in location.state &&
+    typeof location.state.message === 'string'
+      ? location.state.message
+      : '';
 
   const {
     register,
@@ -57,7 +64,13 @@ export function LoginPage() {
     setServerMessage('');
     try {
       const response = await login(values);
-      saveCampusSession(response);
+      if (response.user.role !== 'STUDENT') {
+        setServerMessage(
+          'This application currently supports student accounts only.',
+        );
+        return;
+      }
+      saveCampusSession(response, values.rememberMe);
 
       const redirectFromState =
         typeof location.state === 'object' &&
@@ -66,12 +79,12 @@ export function LoginPage() {
         typeof location.state.from === 'string'
           ? location.state.from
           : null;
-      const redirectTo =
+      const requestedRedirect =
         searchParams.get('redirectTo') ??
         redirectFromState ??
-        roleRedirectPath(response.user.role);
+        '/student/dashboard';
 
-      navigate(redirectTo, { replace: true });
+      navigate(safeStudentRedirect(requestedRedirect), { replace: true });
     } catch (error) {
       setServerMessage(getApiErrorMessage(error));
     }
@@ -110,6 +123,11 @@ export function LoginPage() {
               {serverMessage && (
                 <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {serverMessage}
+                </div>
+              )}
+              {!serverMessage && successMessage && (
+                <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                  {successMessage}
                 </div>
               )}
 
@@ -228,22 +246,20 @@ export function LoginPage() {
   );
 }
 
-function roleRedirectPath(role: string) {
-  if (role === 'ADMIN') {
-    return '/admin/dashboard';
-  }
-  if (role === 'SUPER_ADMIN') {
-    return '/super-admin/dashboard';
-  }
-  return '/student/dashboard';
-}
-
 function inputClass(hasError: boolean) {
   return `w-full rounded-lg border bg-white px-4 py-3 text-slate-900 outline-none transition focus:ring-2 ${
     hasError
       ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
       : 'border-slate-300 focus:border-[#00677f] focus:ring-cyan-100'
   }`;
+}
+
+function safeStudentRedirect(value: string) {
+  return /^(\/student\/|\/listing\/\d+$|\/user\/public-profile\/\d+$)/.test(
+    value,
+  )
+    ? value
+    : '/student/dashboard';
 }
 
 function ErrorText({ message }: { message?: string }) {

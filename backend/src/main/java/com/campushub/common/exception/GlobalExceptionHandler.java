@@ -2,6 +2,8 @@ package com.campushub.common.exception;
 
 import com.campushub.common.api.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
+import com.campushub.payment.PaymentVerificationException;
+import com.campushub.payment.razorpay.RazorpayGatewayException;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,33 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<String>> handleBadRequest(BadRequestException exception) {
         return ResponseEntity
                 .badRequest()
+                .body(ApiResponse.failure(exception.getMessage(), null));
+    }
+
+    @ExceptionHandler(PaymentVerificationException.class)
+    public ResponseEntity<ApiResponse<String>> handlePaymentVerification(
+            PaymentVerificationException exception
+    ) {
+        return ResponseEntity
+                .badRequest()
+                .body(ApiResponse.failure(exception.getMessage(), null));
+    }
+
+    @ExceptionHandler(RazorpayGatewayException.class)
+    public ResponseEntity<ApiResponse<String>> handleRazorpayGateway(
+            RazorpayGatewayException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.failure(exception.getMessage(), null));
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ApiResponse<String>> handleTooManyRequests(
+            TooManyRequestsException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(ApiResponse.failure(exception.getMessage(), null));
     }
 

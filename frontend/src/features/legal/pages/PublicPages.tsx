@@ -1,5 +1,4 @@
 import { Check, LifeBuoy, Mail, MapPin, ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 
 const policies = {
@@ -27,7 +26,7 @@ const policies = {
       ],
       [
         'Your choices',
-        'Students can update optional profile fields, change notification preferences, and request account deactivation through settings or support.',
+        'Students can update optional profile fields, control profile visibility, change passwords, revoke sessions, and request account deactivation from their profile.',
       ],
     ],
   },
@@ -103,7 +102,7 @@ const policies = {
       ],
       [
         'Protect personal information',
-        'Use Campus Hub chat where possible. Never share passwords, OTPs, UPI PINs, card details, or unnecessary identity documents.',
+        'Keep coordination tied to the verified listing and order context where possible. Never share passwords, OTPs, UPI PINs, card details, or unnecessary identity documents.',
       ],
       [
         'Use verified payments',
@@ -223,7 +222,7 @@ export function AboutPage() {
 }
 
 export function ContactSupportPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL?.trim();
   return (
     <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.65fr_1.35fr]">
       <aside>
@@ -237,68 +236,80 @@ export function ContactSupportPage() {
           Tell us what happened and include the relevant order, listing, or
           report number when available.
         </p>
-        <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-800">
-          <Mail aria-hidden="true" className="h-4 w-4 text-cyan-700" />
-          support@campushub.example
-        </p>
+        {supportEmail && (
+          <a
+            className="mt-6 flex items-center gap-2 text-sm font-semibold text-cyan-800 hover:underline"
+            href={`mailto:${supportEmail}`}
+          >
+            <Mail aria-hidden="true" className="h-4 w-4" />
+            {supportEmail}
+          </a>
+        )}
       </aside>
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-        {submitted ? (
-          <div className="py-14 text-center">
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-              <Check aria-hidden="true" className="h-7 w-7" />
-            </span>
-            <h2 className="mt-4 text-xl font-bold text-slate-950">
-              Test request received
-            </h2>
-            <p className="mt-2 text-sm text-slate-500">
-              No support ticket was sent to a backend.
-            </p>
-          </div>
-        ) : (
-          <form
-            className="space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setSubmitted(true);
-            }}
+        <h2 className="text-xl font-bold text-slate-950">
+          Choose the right next step
+        </h2>
+        <div className="mt-5 grid gap-4">
+          <SupportOption
+            description="Use the secure recovery flow for a verified student account."
+            label="Account access"
+            linkLabel="Reset password"
+            to="/forgot-password"
+          />
+          <SupportOption
+            description="Open the listing and use Report listing. The backend records the report against your authenticated account."
+            label="Unsafe or misleading listing"
+          />
+          <SupportOption
+            description="Keep the Campus Hub order number and Razorpay payment reference available when contacting the configured support inbox."
+            label="Order or payment issue"
+          />
+        </div>
+        {supportEmail ? (
+          <a
+            className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-[#071b33] px-5 text-sm font-semibold text-white"
+            href={`mailto:${supportEmail}?subject=Campus%20Hub%20support%20request`}
           >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Full name">
-                <input className={inputClass} required />
-              </Field>
-              <Field label="College email">
-                <input className={inputClass} required type="email" />
-              </Field>
-            </div>
-            <Field label="Topic">
-              <select className={inputClass} defaultValue="">
-                <option disabled value="">
-                  Choose a topic
-                </option>
-                <option>Account and verification</option>
-                <option>Listing or order</option>
-                <option>Payment or refund</option>
-                <option>Safety report</option>
-                <option>Other</option>
-              </select>
-            </Field>
-            <Field label="Order or listing ID (optional)">
-              <input className={inputClass} placeholder="e.g. CH-240718" />
-            </Field>
-            <Field label="How can we help?">
-              <textarea className={`${inputClass} min-h-36 py-3`} required />
-            </Field>
-            <button
-              className="h-11 rounded-lg bg-[#071b33] px-6 text-sm font-semibold text-white"
-              type="submit"
-            >
-              Submit test request
-            </button>
-          </form>
+            <Mail aria-hidden="true" className="h-4 w-4" />
+            Email support
+          </a>
+        ) : (
+          <p className="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+            An external support inbox is not configured for this environment.
+            Set <code className="font-mono">VITE_SUPPORT_EMAIL</code> before
+            building the frontend to enable direct support email.
+          </p>
         )}
       </section>
     </div>
+  );
+}
+
+function SupportOption({
+  label,
+  description,
+  linkLabel,
+  to,
+}: {
+  label: string;
+  description: string;
+  linkLabel?: string;
+  to?: string;
+}) {
+  return (
+    <article className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <h3 className="font-bold text-slate-950">{label}</h3>
+      <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+      {linkLabel && to && (
+        <Link
+          className="mt-3 inline-flex text-sm font-semibold text-cyan-800 hover:underline"
+          to={to}
+        >
+          {linkLabel}
+        </Link>
+      )}
+    </article>
   );
 }
 
@@ -372,23 +383,5 @@ function AboutCard({
       <h2 className="mt-4 font-bold text-slate-950">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
     </article>
-  );
-}
-const inputClass =
-  'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100';
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-800">
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }

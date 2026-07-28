@@ -13,9 +13,17 @@ The runner creates these verified student accounts at the configured college:
 - `demo.neha@recmainpuri.in`
 - `demo.aman@recmainpuri.in`
 
-It also creates twelve listings:
+It also creates three verified cross-college sellers for Explore Other
+Colleges:
 
-- ten active listings across common marketplace categories;
+- `demo.aarav@iitd.ac.in`
+- `demo.mira@iitb.ac.in`
+- `demo.kabir@iitk.ac.in`
+
+It creates eighteen listings in total:
+
+- sixteen active listings across the configured, Delhi, Bombay, and Kanpur
+  college marketplaces;
 - one sold listing for sold-state testing;
 - one inactive listing for access-control testing.
 
@@ -29,14 +37,15 @@ startup:
 
 ```bash
 cd backend
+JWT_SECRET="$(openssl rand -base64 48)" \
 CAMPUSHUB_DEMO_DATA_ENABLED=true \
 CAMPUSHUB_DEMO_DATA_PASSWORD="$YOUR_DEMO_PASSWORD" \
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 The password is BCrypt-hashed before storage and is never defined in source
-code. Disable the flag after the initial seed; the records remain in the local
-H2 database.
+code. Disable the flag after the initial seed; the records remain in the
+configured local database.
 
 To target another seeded college, also provide:
 

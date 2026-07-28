@@ -1,17 +1,5 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 
-import { AdminShell } from '../features/admin/components/AdminShell';
-import { AdminDashboardPage } from '../features/admin/pages/AdminDashboardPage';
-import {
-  AdminCategoriesPage,
-  AdminCollegesPage,
-  AdminListingsPage,
-  AdminOrdersPage,
-  AdminPaymentsPage,
-  AdminReportsPage,
-  AdminReviewsPage,
-  AdminUsersPage,
-} from '../features/admin/pages/AdminSectionPages';
 import { authRoutes } from '../features/auth/routes/authRoutes';
 import {
   AboutPage,
@@ -22,31 +10,7 @@ import {
   SafetyGuidelinesPage,
   TermsPage,
 } from '../features/legal/pages/PublicPages';
-import { ExploreCollegesPage } from '../features/marketplace/pages/ExploreCollegesPage';
-import { ListingDetailsPage } from '../features/marketplace/pages/ListingDetailsPage';
-import { MarketplacePage } from '../features/marketplace/pages/MarketplacePage';
-import { MyMarketplacePage } from '../features/marketplace/pages/MyMarketplacePage';
-import { PublicSellerProfilePage } from '../features/marketplace/pages/PublicSellerProfilePage';
-import { SellItemPage } from '../features/marketplace/pages/SellItemPage';
 import { StudentShell } from '../features/student/components/StudentShell';
-import {
-  ChatPage,
-  NotificationsPage,
-  OrdersPage,
-  PaymentsPage,
-  ReviewsPage,
-  WishlistPage,
-} from '../features/student/pages/StudentActivityPages';
-import { SettingsPage } from '../features/student/pages/StudentAccountPages';
-import { StudentProfilePage } from '../features/student/profile/pages/StudentProfilePage';
-import { StudentDashboardPage } from '../features/student/pages/StudentDashboardPage';
-import {
-  SuperAdminAdminsPage,
-  SuperAdminAnalyticsPage,
-  SuperAdminCollegesPage,
-  SuperAdminDashboardPage,
-  SuperAdminSettingsPage,
-} from '../features/super-admin/pages/SuperAdminPages';
 import { App } from './App';
 import { HomePage } from './HomePage';
 
@@ -60,57 +24,146 @@ export const router = createBrowserRouter([
       {
         element: <StudentShell />,
         children: [
-          { path: 'student/dashboard', element: <StudentDashboardPage /> },
-          { path: 'student/profile', element: <StudentProfilePage /> },
-          { path: 'student/marketplace', element: <MarketplacePage /> },
+          {
+            path: 'student/dashboard',
+            lazy: async () => {
+              const { StudentDashboardPage } =
+                await import('../features/student/pages/StudentDashboardPage');
+              return { Component: StudentDashboardPage };
+            },
+          },
+          {
+            path: 'student/profile',
+            lazy: async () => {
+              const { StudentProfilePage } =
+                await import('../features/student/profile/pages/StudentProfilePage');
+              return { Component: StudentProfilePage };
+            },
+          },
+          {
+            path: 'student/marketplace',
+            lazy: async () => {
+              const { MarketplacePage } =
+                await import('../features/marketplace/pages/MarketplacePage');
+              return { Component: MarketplacePage };
+            },
+          },
           {
             path: 'student/explore-colleges',
-            element: <ExploreCollegesPage />,
+            lazy: async () => {
+              const { ExploreCollegesPage } =
+                await import('../features/marketplace/pages/ExploreCollegesPage');
+              return { Component: ExploreCollegesPage };
+            },
           },
-          { path: 'student/sell', element: <SellItemPage /> },
-          { path: 'student/my-marketplace', element: <MyMarketplacePage /> },
-          { path: 'student/wishlist', element: <WishlistPage /> },
-          { path: 'student/orders', element: <OrdersPage /> },
-          { path: 'student/payments', element: <PaymentsPage /> },
-          { path: 'student/reviews', element: <ReviewsPage /> },
-          { path: 'student/notifications', element: <NotificationsPage /> },
-          { path: 'student/settings', element: <SettingsPage /> },
-          { path: 'student/chat', element: <ChatPage /> },
-          { path: 'listing/:id', element: <ListingDetailsPage /> },
+          {
+            path: 'student/explore-colleges/listing/:id',
+            lazy: async () => {
+              const { ListingDetailsPage } =
+                await import('../features/marketplace/pages/ListingDetailsPage');
+              return {
+                Component: () => <ListingDetailsPage exploreMode />,
+              };
+            },
+          },
+          {
+            path: 'student/sell',
+            lazy: async () => {
+              const { SellItemPage } =
+                await import('../features/marketplace/pages/SellItemPage');
+              return { Component: SellItemPage };
+            },
+          },
+          {
+            path: 'student/my-marketplace',
+            lazy: async () => {
+              const { MyMarketplacePage } =
+                await import('../features/marketplace/pages/MyMarketplacePage');
+              return { Component: MyMarketplacePage };
+            },
+          },
+          {
+            path: 'student/my-marketplace/edit/:listingId',
+            lazy: async () => {
+              const { EditListingPage } =
+                await import('../features/marketplace/pages/EditListingPage');
+              return { Component: EditListingPage };
+            },
+          },
+          {
+            path: 'student/wishlist',
+            lazy: async () => {
+              const { WishlistPage } =
+                await import('../features/wishlist/pages/WishlistPage');
+              return { Component: WishlistPage };
+            },
+          },
+          {
+            path: 'student/orders',
+            lazy: async () => {
+              const { OrdersPage } =
+                await import('../features/orders/pages/OrdersPage');
+              return { Component: OrdersPage };
+            },
+          },
+          {
+            path: 'student/orders/:orderId',
+            lazy: async () => {
+              const { OrderDetailsPage } =
+                await import('../features/orders/pages/OrderDetailsPage');
+              return { Component: OrderDetailsPage };
+            },
+          },
+          {
+            path: 'student/payments',
+            lazy: async () => {
+              const { PaymentHistoryPage } =
+                await import('../features/payments/pages/PaymentHistoryPage');
+              return { Component: PaymentHistoryPage };
+            },
+          },
+          {
+            path: 'student/reviews',
+            lazy: async () => {
+              const { ReviewsPage } =
+                await import('../features/reviews/pages/ReviewsPage');
+              return { Component: ReviewsPage };
+            },
+          },
+          {
+            path: 'student/notifications',
+            lazy: async () => {
+              const { NotificationsPage } =
+                await import('../features/notifications/pages/NotificationsPage');
+              return { Component: NotificationsPage };
+            },
+          },
+          {
+            path: 'student/settings',
+            element: (
+              <Navigate replace to="/student/profile#profile-security" />
+            ),
+          },
+          {
+            path: 'student/chat',
+            element: <Navigate replace to="/student/dashboard" />,
+          },
+          {
+            path: 'listing/:id',
+            lazy: async () => {
+              const { ListingDetailsPage } =
+                await import('../features/marketplace/pages/ListingDetailsPage');
+              return { Component: ListingDetailsPage };
+            },
+          },
           {
             path: 'user/public-profile/:sellerId',
-            element: <PublicSellerProfilePage />,
+            lazy: async () => {
+              const { PublicSellerProfilePage } =
+                await import('../features/marketplace/pages/PublicSellerProfilePage');
+              return { Component: PublicSellerProfilePage };
+            },
           },
-        ],
-      },
-      {
-        element: <AdminShell />,
-        children: [
-          { path: 'admin/dashboard', element: <AdminDashboardPage /> },
-          { path: 'admin/users', element: <AdminUsersPage /> },
-          { path: 'admin/colleges', element: <AdminCollegesPage /> },
-          { path: 'admin/listings', element: <AdminListingsPage /> },
-          { path: 'admin/reports', element: <AdminReportsPage /> },
-          { path: 'admin/orders', element: <AdminOrdersPage /> },
-          { path: 'admin/payments', element: <AdminPaymentsPage /> },
-          { path: 'admin/reviews', element: <AdminReviewsPage /> },
-          { path: 'admin/categories', element: <AdminCategoriesPage /> },
-        ],
-      },
-      {
-        element: <AdminShell mode="super-admin" />,
-        children: [
-          {
-            path: 'super-admin/dashboard',
-            element: <SuperAdminDashboardPage />,
-          },
-          { path: 'super-admin/admins', element: <SuperAdminAdminsPage /> },
-          { path: 'super-admin/colleges', element: <SuperAdminCollegesPage /> },
-          {
-            path: 'super-admin/analytics',
-            element: <SuperAdminAnalyticsPage />,
-          },
-          { path: 'super-admin/settings', element: <SuperAdminSettingsPage /> },
         ],
       },
       {

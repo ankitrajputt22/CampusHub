@@ -6,7 +6,9 @@ public record CollegeSummaryResponse(
         Long id,
         String name,
         String code,
-        String emailDomain
+        String emailDomain,
+        String city,
+        String state
 ) {
 
     public static CollegeSummaryResponse from(College college) {
@@ -14,7 +16,9 @@ public record CollegeSummaryResponse(
                 college.getId(),
                 college.getName(),
                 college.getCode(),
-                college.getEmailDomain()
+                college.getEmailDomain(),
+                college.getCity(),
+                college.getState()
         );
     }
 }

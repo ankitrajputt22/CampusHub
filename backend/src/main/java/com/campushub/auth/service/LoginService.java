@@ -45,7 +45,7 @@ public class LoginService {
         this.refreshTokenService = refreshTokenService;
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = UnauthorizedException.class)
     public LoginResponse login(LoginRequest request, String ipAddress, String userAgent) {
         String email = normalizeEmail(request.email());
         User user = userRepository.findByEmailIgnoreCase(email).orElse(null);

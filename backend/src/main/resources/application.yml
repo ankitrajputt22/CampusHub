@@ -42,8 +42,13 @@ app:
     remember-me-refresh-token-days: ${JWT_REMEMBER_ME_REFRESH_TOKEN_DAYS:30}
   otp:
     expiry-minutes: ${OTP_EXPIRY_MINUTES:10}
-    expose-dev-codes: ${OTP_EXPOSE_DEV_CODES:true}
+    expose-dev-codes: ${OTP_EXPOSE_DEV_CODES:false}
   profile-photo:
     storage-directory: ${PROFILE_PHOTO_STORAGE_DIRECTORY:./data/profile-photos}
   listing-image:
     storage-directory: ${LISTING_IMAGE_STORAGE_DIRECTORY:./data/listing-images}
+  razorpay:
+    key-id: ${RAZORPAY_KEY_ID:}
+    key-secret: ${RAZORPAY_KEY_SECRET:}
+    api-base-url: ${RAZORPAY_API_BASE_URL:https://api.razorpay.com/v1}
+    mock-enabled: ${RAZORPAY_MOCK_ENABLED:false}
