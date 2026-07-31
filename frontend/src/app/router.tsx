@@ -11,7 +11,7 @@ import {
   TermsPage,
 } from '../features/legal/pages/PublicPages';
 import { StudentShell } from '../features/student/components/StudentShell';
-import { AdminShell } from '../features/reports/components/AdminShell';
+import { AdminShell } from '../features/admin/components/AdminShell';
 import { App } from './App';
 import { HomePage } from './HomePage';
 
@@ -179,6 +179,50 @@ export const router = createBrowserRouter([
         element: <AdminShell />,
         children: [
           {
+            path: 'admin',
+            element: <Navigate replace to="/admin/dashboard" />,
+          },
+          {
+            path: 'admin/dashboard',
+            lazy: async () => {
+              const { AdminDashboardPage } =
+                await import('../features/admin/pages/AdminDashboardPage');
+              return { Component: AdminDashboardPage };
+            },
+          },
+          {
+            path: 'admin/users',
+            lazy: async () => {
+              const { AdminUsersPage } =
+                await import('../features/admin/pages/AdminUsersPage');
+              return { Component: AdminUsersPage };
+            },
+          },
+          {
+            path: 'admin/users/:userId',
+            lazy: async () => {
+              const { AdminUserDetailsPage } =
+                await import('../features/admin/pages/AdminUserDetailsPage');
+              return { Component: AdminUserDetailsPage };
+            },
+          },
+          {
+            path: 'admin/listings',
+            lazy: async () => {
+              const { AdminListingsPage } =
+                await import('../features/admin/pages/AdminListingsPage');
+              return { Component: AdminListingsPage };
+            },
+          },
+          {
+            path: 'admin/listings/:listingId',
+            lazy: async () => {
+              const { AdminListingDetailsPage } =
+                await import('../features/admin/pages/AdminListingDetailsPage');
+              return { Component: AdminListingDetailsPage };
+            },
+          },
+          {
             path: 'admin/reports',
             lazy: async () => {
               const { AdminReportsPage } =
@@ -192,6 +236,54 @@ export const router = createBrowserRouter([
               const { AdminReportDetailsPage } =
                 await import('../features/reports/pages/AdminReportDetailsPage');
               return { Component: AdminReportDetailsPage };
+            },
+          },
+          {
+            path: 'admin/reviews',
+            lazy: async () => {
+              const { AdminReviewsPage } =
+                await import('../features/admin/pages/AdminReviewsPage');
+              return { Component: AdminReviewsPage };
+            },
+          },
+          {
+            path: 'admin/orders',
+            lazy: async () => {
+              const { AdminOrdersPage } =
+                await import('../features/admin/pages/AdminOrdersPage');
+              return { Component: AdminOrdersPage };
+            },
+          },
+          {
+            path: 'admin/orders/:orderId',
+            lazy: async () => {
+              const { AdminOrderDetailsPage } =
+                await import('../features/admin/pages/AdminOrdersPage');
+              return { Component: AdminOrderDetailsPage };
+            },
+          },
+          {
+            path: 'admin/payments',
+            lazy: async () => {
+              const { AdminPaymentsPage } =
+                await import('../features/admin/pages/AdminPaymentsPage');
+              return { Component: AdminPaymentsPage };
+            },
+          },
+          {
+            path: 'admin/payments/:paymentId',
+            lazy: async () => {
+              const { AdminPaymentDetailsPage } =
+                await import('../features/admin/pages/AdminPaymentsPage');
+              return { Component: AdminPaymentDetailsPage };
+            },
+          },
+          {
+            path: 'admin/audit-logs',
+            lazy: async () => {
+              const { AdminAuditLogsPage } =
+                await import('../features/admin/pages/AdminAuditLogsPage');
+              return { Component: AdminAuditLogsPage };
             },
           },
         ],

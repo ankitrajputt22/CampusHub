@@ -57,10 +57,21 @@ Supported entry points:
 /student/wishlist            Saved listings
 /student/reviews             Order-linked seller feedback
 /student/notifications       Notification inbox
+/admin/dashboard             Protected administrator overview
+/admin/users                 User moderation and account history
+/admin/listings              Listing moderation and safety signals
+/admin/reports               Reports queue and resolution workflow
+/admin/reviews               Review visibility moderation
+/admin/orders                Read-only order oversight
+/admin/payments              Read-only payment oversight
+/admin/audit-logs            Immutable moderation activity
 /about                       Public and policy navigation
 ```
 
-All supported student pages are available from the student navigation. Unsupported mock-only admin, chat, and settings routes are intentionally not exposed; account privacy and security controls live in the real profile workspace.
+All supported student pages are available from the student navigation. Admin
+pages require an active, verified `ADMIN` or `SUPER_ADMIN` account. Chat and
+mock-only settings routes are intentionally not exposed; account privacy and
+security controls live in the real profile workspace.
 
 Create `frontend/.env.local` when needed:
 
@@ -84,6 +95,10 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 The local profile uses a file-backed H2 database, exposes OTP codes for local testing, and uses a mock Razorpay gateway unless `RAZORPAY_MOCK_ENABLED=false` is set. These local defaults are not active in the normal application profile.
+
+For an opt-in local administrator, sample users, and marketplace listings, see
+[Local demo data](docs/local-demo-data.md). The seed password must be supplied
+through `CAMPUSHUB_DEMO_DATA_PASSWORD`; no login password is stored in source.
 
 Useful backend commands:
 

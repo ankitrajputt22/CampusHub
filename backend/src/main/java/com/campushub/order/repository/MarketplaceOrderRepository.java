@@ -25,6 +25,12 @@ public interface MarketplaceOrderRepository
 
     long countBySellerIdAndStatus(Long sellerId, OrderStatus status);
 
+    long countBySellerId(Long sellerId);
+
+    long countByStatus(OrderStatus status);
+
+    long countByListingId(Long listingId);
+
     boolean existsByListingIdAndStatus(Long listingId, OrderStatus status);
 
     @Override

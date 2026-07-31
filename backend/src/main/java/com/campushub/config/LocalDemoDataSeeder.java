@@ -10,6 +10,7 @@ import com.campushub.profile.model.ProfilePrivacySettings;
 import com.campushub.profile.repository.ProfilePrivacySettingsRepository;
 import com.campushub.user.model.AccountStatus;
 import com.campushub.user.model.User;
+import com.campushub.user.model.UserRole;
 import com.campushub.user.repository.UserRepository;
 import com.campushub.user.trustscore.TrustScore;
 import com.campushub.user.trustscore.TrustScoreRepository;
@@ -37,6 +38,20 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalDemoDataSeeder.class);
     private static final Pattern STRONG_PASSWORD = Pattern.compile(
             "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$"
+    );
+    private static final DemoUser DEMO_ADMIN = new DemoUser(
+            "Campus Hub Admin",
+            "demo.admin@recmainpuri.in",
+            "+919700000100",
+            "Administration",
+            "Campus Operations",
+            "Staff",
+            "CHADMIN100",
+            "Administration Block",
+            "Local administrator account for testing moderation workflows.",
+            null,
+            null,
+            100
     );
 
     private static final List<DemoUser> DEMO_USERS = List.of(
@@ -415,6 +430,23 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
 
         Map<String, User> users = new LinkedHashMap<>();
         int createdUsers = 0;
+
+        User existingAdmin = userRepository.findByEmailIgnoreCase(DEMO_ADMIN.email())
+                .orElse(null);
+        if (existingAdmin == null) {
+            User admin = createUser(DEMO_ADMIN, college);
+            admin.changeRole(UserRole.ADMIN);
+            userRepository.save(admin);
+            createdUsers++;
+        } else {
+            validateExistingUser(existingAdmin, college);
+            if (existingAdmin.getRole() != UserRole.ADMIN) {
+                throw new IllegalStateException(
+                        "Existing demo admin email is not an administrator account."
+                );
+            }
+        }
+
         for (DemoUser definition : DEMO_USERS) {
             User existing = userRepository.findByEmailIgnoreCase(definition.email())
                     .orElse(null);
@@ -480,7 +512,7 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
         }
 
         LOGGER.info(
-                "Local demo data ready for {} and Explore Other Colleges: "
+                "Local demo admin and marketplace data ready for {} and Explore Other Colleges: "
                         + "{} new users and {} new listings",
                 college.getCode(),
                 createdUsers,

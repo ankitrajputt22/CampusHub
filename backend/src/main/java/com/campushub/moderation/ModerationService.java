@@ -1,8 +1,9 @@
 package com.campushub.moderation;
 
+import com.campushub.admin.AdminAccessService;
+import com.campushub.admin.AdminAuditLogService;
 import com.campushub.auth.service.RefreshTokenService;
 import com.campushub.common.exception.BadRequestException;
-import com.campushub.common.exception.ForbiddenException;
 import com.campushub.common.exception.ResourceConflictException;
 import com.campushub.common.exception.ResourceNotFoundException;
 import com.campushub.listing.model.Listing;
@@ -58,6 +59,8 @@ public class ModerationService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final UserRepository userRepository;
+    private final AdminAccessService adminAccessService;
+    private final AdminAuditLogService auditLogService;
     private final ListingRepository listingRepository;
     private final SellerReviewRepository reviewRepository;
     private final ReportRepository reportRepository;
@@ -67,6 +70,8 @@ public class ModerationService {
 
     public ModerationService(
             UserRepository userRepository,
+            AdminAccessService adminAccessService,
+            AdminAuditLogService auditLogService,
             ListingRepository listingRepository,
             SellerReviewRepository reviewRepository,
             ReportRepository reportRepository,
@@ -75,6 +80,8 @@ public class ModerationService {
             RefreshTokenService refreshTokenService
     ) {
         this.userRepository = userRepository;
+        this.adminAccessService = adminAccessService;
+        this.auditLogService = auditLogService;
         this.listingRepository = listingRepository;
         this.reviewRepository = reviewRepository;
         this.reportRepository = reportRepository;
@@ -292,6 +299,62 @@ public class ModerationService {
     }
 
     @Transactional
+    public ModerationResultResponse softDeleteListing(
+            Long authenticatedUserId,
+            Long listingId,
+            ModerationRequest request
+    ) {
+        User moderator = loadModerator(authenticatedUserId);
+        Report report = matchingReport(
+                request.reportId(),
+                ReportType.LISTING,
+                listingId
+        );
+        Listing listing = listingRepository.findMarketplaceListingById(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Listing was not found."
+                ));
+        ListingStatus previous = listing.getStatus();
+        if (previous == ListingStatus.DELETED || previous == ListingStatus.SOLD) {
+            throw new ResourceConflictException(
+                    "A sold or deleted listing cannot be soft deleted."
+            );
+        }
+        String note = normalizeRequiredNote(
+                request.note(),
+                "Please explain why this listing is being removed."
+        );
+        listing.changeStatus(ListingStatus.DELETED);
+        saveAction(
+                report,
+                moderator,
+                ModerationActionType.LISTING_DELETED,
+                ModerationTargetType.LISTING,
+                listing.getId(),
+                previous.name(),
+                ListingStatus.DELETED.name(),
+                note
+        );
+        completeWithAction(report, moderator, note);
+        notifyAction(
+                report,
+                listing.getSeller(),
+                "Listing removed",
+                "Your listing was removed from Campus Hub after an administrator review.",
+                RelatedEntityType.LISTING,
+                listing.getId(),
+                "/student/my-marketplace"
+        );
+        return result(
+                report,
+                ModerationActionType.LISTING_DELETED,
+                ModerationTargetType.LISTING,
+                listing.getId(),
+                ListingStatus.DELETED.name()
+        );
+    }
+
+    @Transactional
     public ModerationResultResponse markReviewUnderReview(
             Long authenticatedUserId,
             Long reviewId,
@@ -355,7 +418,7 @@ public class ModerationService {
                 request.note(),
                 "A warning must include clear guidance for the student."
         );
-        actionRepository.save(new ModerationAction(
+        saveAction(
                 report,
                 moderator,
                 ModerationActionType.USER_WARNED,
@@ -364,7 +427,7 @@ public class ModerationService {
                 target.getStatus().name(),
                 target.getStatus().name(),
                 note
-        ));
+        );
         completeWithAction(report, moderator, note);
         notifyAction(
                 report,
@@ -446,7 +509,7 @@ public class ModerationService {
     ) {
         ReportStatus previous = report.getStatus();
         report.transition(nextStatus, moderator, note);
-        actionRepository.save(new ModerationAction(
+        saveAction(
                 report,
                 moderator,
                 actionType,
@@ -455,7 +518,7 @@ public class ModerationService {
                 previous.name(),
                 nextStatus.name(),
                 note
-        ));
+        );
         notificationService.notify(
                 report.getReporter(),
                 NotificationType.REPORT,
@@ -492,7 +555,7 @@ public class ModerationService {
         validateListingTransition(previous, nextStatus);
         listing.changeStatus(nextStatus);
         String note = normalizeNote(request.note());
-        actionRepository.save(new ModerationAction(
+        saveAction(
                 report,
                 moderator,
                 actionType,
@@ -501,7 +564,7 @@ public class ModerationService {
                 previous.name(),
                 nextStatus.name(),
                 note
-        ));
+        );
         completeWithAction(report, moderator, note);
         notifyAction(
                 report,
@@ -542,7 +605,7 @@ public class ModerationService {
         }
         review.changeStatus(nextStatus);
         String note = normalizeNote(request.note());
-        actionRepository.save(new ModerationAction(
+        saveAction(
                 report,
                 moderator,
                 actionType,
@@ -551,7 +614,7 @@ public class ModerationService {
                 previous.name(),
                 nextStatus.name(),
                 note
-        ));
+        );
         completeWithAction(report, moderator, note);
         notifyAction(
                 report,
@@ -587,7 +650,7 @@ public class ModerationService {
         validateUserTransition(previous, nextStatus);
         target.changeStatus(nextStatus);
         String note = normalizeNote(request.note());
-        actionRepository.save(new ModerationAction(
+        saveAction(
                 report,
                 moderator,
                 actionType,
@@ -596,7 +659,24 @@ public class ModerationService {
                 previous.name(),
                 nextStatus.name(),
                 note
-        ));
+        );
+        if (nextStatus == AccountStatus.BLOCKED) {
+            for (Listing listing : listingRepository.findAllBySellerIdAndStatus(
+                    target.getId(),
+                    ListingStatus.ACTIVE
+            )) {
+                listing.changeStatus(ListingStatus.BLOCKED);
+                auditLogService.record(
+                        moderator,
+                        ModerationActionType.LISTING_BLOCKED.name(),
+                        ModerationTargetType.LISTING.name(),
+                        listing.getId(),
+                        ListingStatus.ACTIVE.name(),
+                        ListingStatus.BLOCKED.name(),
+                        "Automatically blocked because the seller account was blocked."
+                );
+            }
+        }
         completeWithAction(report, moderator, note);
         notifyAction(
                 report,
@@ -620,6 +700,9 @@ public class ModerationService {
     }
 
     private void completeWithAction(Report report, User moderator, String note) {
+        if (report == null) {
+            return;
+        }
         report.transition(ReportStatus.ACTION_TAKEN, moderator, note);
         notificationService.notify(
                 report.getReporter(),
@@ -645,7 +728,9 @@ public class ModerationService {
         notificationService.notify(
                 target,
                 NotificationType.ADMIN,
-                notificationPriority(report.getPriority()),
+                report == null
+                        ? NotificationPriority.MEDIUM
+                        : notificationPriority(report.getPriority()),
                 title,
                 message,
                 entityType,
@@ -655,6 +740,9 @@ public class ModerationService {
     }
 
     private Report matchingReport(Long reportId, ReportType type, Long entityId) {
+        if (reportId == null) {
+            return null;
+        }
         Report report = loadDetailedReport(reportId);
         if (report.getType() != type
                 || !report.getReportedEntityId().equals(entityId)) {
@@ -723,20 +811,7 @@ public class ModerationService {
     }
 
     private User loadModerator(Long userId) {
-        User user = userRepository.findDashboardUserById(userId)
-                .orElseThrow(() -> new ForbiddenException(
-                        "Moderator account was not found."
-                ));
-        if ((user.getRole() != UserRole.ADMIN
-                && user.getRole() != UserRole.SUPER_ADMIN)
-                || user.getStatus() != AccountStatus.ACTIVE
-                || !user.isEmailVerified()
-                || !user.isPhoneVerified()) {
-            throw new ForbiddenException(
-                    "An active administrator account is required."
-            );
-        }
-        return user;
+        return adminAccessService.requireActiveAdmin(userId);
     }
 
     private User loadModeratableStudent(Long userId) {
@@ -919,13 +994,46 @@ public class ModerationService {
             String targetStatus
     ) {
         return new ModerationResultResponse(
-                report.getId(),
-                report.getStatus().name(),
+                report == null ? null : report.getId(),
+                report == null ? null : report.getStatus().name(),
                 action,
                 targetType.name(),
                 targetId,
                 targetStatus,
                 Instant.now()
+        );
+    }
+
+    private void saveAction(
+            Report report,
+            User moderator,
+            ModerationActionType actionType,
+            ModerationTargetType targetType,
+            Long targetId,
+            String previousState,
+            String newState,
+            String note
+    ) {
+        if (report != null) {
+            actionRepository.save(new ModerationAction(
+                    report,
+                    moderator,
+                    actionType,
+                    targetType,
+                    targetId,
+                    previousState,
+                    newState,
+                    note
+            ));
+        }
+        auditLogService.record(
+                moderator,
+                actionType.name(),
+                targetType.name(),
+                targetId,
+                previousState,
+                newState,
+                note
         );
     }
 

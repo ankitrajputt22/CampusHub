@@ -11,7 +11,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import com.campushub.user.trustscore.TrustScore;
 import java.time.Instant;
 
 @Entity
@@ -37,6 +39,9 @@ public class User {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "college_id", nullable = false)
     private College college;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private TrustScore trustScore;
 
     @Column(nullable = false, length = 120)
     private String department;
@@ -233,6 +238,18 @@ public class User {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public Instant getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public TrustScore getTrustScore() {
+        return trustScore;
     }
 
     public boolean isEmailVerified() {

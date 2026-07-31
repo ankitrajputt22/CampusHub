@@ -70,7 +70,7 @@ export function LoginPage() {
         response.user.role === 'ADMIN' ||
         response.user.role === 'SUPER_ADMIN'
       ) {
-        navigate('/admin/reports', { replace: true });
+        navigate('/admin/dashboard', { replace: true });
         return;
       }
 

@@ -24,6 +24,16 @@ public interface ListingRepository
 
     long countBySellerIdAndStatusNot(Long sellerId, ListingStatus status);
 
+    long countByStatus(ListingStatus status);
+
+    List<Listing> findAllBySellerIdAndStatus(Long sellerId, ListingStatus status);
+
+    @EntityGraph(attributePaths = {"seller", "college"})
+    List<Listing> findTop5ByOrderByCreatedAtDesc();
+
+    @EntityGraph(attributePaths = {"seller", "college"})
+    List<Listing> findTop5BySellerIdOrderByCreatedAtDesc(Long sellerId);
+
     long countByCollegeIdAndStatusAndSeller_Status(
             Long collegeId,
             ListingStatus status,

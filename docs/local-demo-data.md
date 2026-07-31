@@ -6,6 +6,14 @@ local profile and explicit enable property are both present.
 
 ## Seed data
 
+The runner creates this verified administrator account:
+
+- `demo.admin@recmainpuri.in`
+
+Use it to open `/admin/dashboard` and test users, listings, reports, reviews,
+orders, payments, and immutable audit logs. It uses the same
+`CAMPUSHUB_DEMO_DATA_PASSWORD` supplied at startup.
+
 The runner creates these verified student accounts at the configured college:
 
 - `demo.priya@recmainpuri.in`
@@ -28,7 +36,8 @@ It creates eighteen listings in total:
 - one inactive listing for access-control testing.
 
 The operation is idempotent. Existing demo accounts are preserved, passwords
-are not reset, and listings are not duplicated.
+are not reset, and listings are not duplicated. For safety, startup fails if
+the demo administrator email already belongs to a non-admin account.
 
 ## Run locally
 

@@ -7,6 +7,7 @@ import com.campushub.listing.model.ListingStatus;
 import com.campushub.listing.repository.ListingRepository;
 import com.campushub.user.model.AccountStatus;
 import com.campushub.user.model.User;
+import com.campushub.user.model.UserRole;
 import com.campushub.user.repository.UserRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -61,11 +62,19 @@ class LocalDemoDataSeederIntegrationTest {
         assertTrue(priya.isEmailVerified());
         assertTrue(priya.isPhoneVerified());
         assertTrue(passwordEncoder.matches(TEST_PASSWORD, priya.getPasswordHash()));
+        User admin = userRepository.findByEmailIgnoreCase(
+                "demo.admin@recmainpuri.in"
+        ).orElseThrow();
+        assertEquals(AccountStatus.ACTIVE, admin.getStatus());
+        assertEquals(UserRole.ADMIN, admin.getRole());
+        assertTrue(admin.isEmailVerified());
+        assertTrue(admin.isPhoneVerified());
+        assertTrue(passwordEncoder.matches(TEST_PASSWORD, admin.getPasswordHash()));
         User crossCollegeSeller = userRepository.findByEmailIgnoreCase(
                 "demo.mira@iitb.ac.in"
         ).orElseThrow();
         assertEquals(2L, crossCollegeSeller.getCollege().getId());
-        assertEquals(7, userRepository.count());
+        assertEquals(8, userRepository.count());
         assertEquals(18, listingRepository.count());
         assertEquals(16, listingRepository.findAll().stream()
                 .filter(listing -> listing.getStatus() == ListingStatus.ACTIVE)
@@ -73,7 +82,7 @@ class LocalDemoDataSeederIntegrationTest {
 
         seeder.run(null);
 
-        assertEquals(7, userRepository.count());
+        assertEquals(8, userRepository.count());
         assertEquals(18, listingRepository.count());
     }
 }

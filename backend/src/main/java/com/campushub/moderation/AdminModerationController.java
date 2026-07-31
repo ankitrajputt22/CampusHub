@@ -8,6 +8,7 @@ import com.campushub.security.AuthenticatedUser;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +53,24 @@ public class AdminModerationController {
             @Valid @RequestBody ModerationRequest request
     ) {
         return success(moderationService.restoreListing(userId(user), listingId, request));
+    }
+
+    @DeleteMapping("/listings/{listingId}")
+    public ApiResponse<ModerationResultResponse> deleteListing(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable Long listingId,
+            @Valid @RequestBody(required = false) ModerationRequest request
+    ) {
+        ModerationRequest moderationRequest = request == null
+                ? new ModerationRequest(null, null)
+                : request;
+        return success(
+                moderationService.softDeleteListing(
+                        userId(user),
+                        listingId,
+                        moderationRequest
+                )
+        );
     }
 
     @PatchMapping("/reviews/{reviewId}/under-review")

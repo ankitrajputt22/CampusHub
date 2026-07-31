@@ -26,6 +26,8 @@ public interface PaymentRepository
     @EntityGraph(attributePaths = {"order", "buyer", "seller", "listing", "college"})
     Optional<Payment> findByOrderId(Long orderId);
 
+    long countByStatus(PaymentStatus status);
+
     @EntityGraph(attributePaths = {"order", "buyer", "seller", "listing", "college"})
     @Query("select payment from Payment payment where payment.id = :paymentId")
     Optional<Payment> findPaymentDetailsById(@Param("paymentId") Long paymentId);
