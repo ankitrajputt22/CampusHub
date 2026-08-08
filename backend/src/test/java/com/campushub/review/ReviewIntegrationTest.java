@@ -158,7 +158,8 @@ class ReviewIntegrationTest {
         Map<String, Object> signupRequest = Map.ofEntries(
                 Map.entry("fullName", name),
                 Map.entry("collegeId", 1),
-                Map.entry("collegeEmail", email),
+                Map.entry("username", email.substring(0, email.indexOf('@'))),
+                Map.entry("email", email),
                 Map.entry("password", PASSWORD),
                 Map.entry("confirmPassword", PASSWORD),
                 Map.entry("department", "Computer Science Engineering"),
@@ -178,16 +179,7 @@ class ReviewIntegrationTest {
         ).path("data");
         long userId = signup.path("userId").asLong();
 
-        mockMvc.perform(post("/api/auth/verify-signup-otp")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of(
-                                "userId", userId,
-                                "emailOtp", signup.path("devOtpCodes")
-                                        .path("emailOtp").asText(),
-                                "phoneOtp", signup.path("devOtpCodes")
-                                        .path("phoneOtp").asText()
-                        ))))
-                .andExpect(status().isOk());
+        com.campushub.auth.SignupTestSupport.manuallyVerifyAndComplete(mockMvc, objectMapper, userId);
 
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

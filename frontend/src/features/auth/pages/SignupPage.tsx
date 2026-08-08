@@ -13,12 +13,15 @@ import {
   type CollegeSummary,
   checkEmailAvailability,
   checkPhoneAvailability,
+  checkUsernameAvailability,
+  completeSignup,
   getApiErrorMessage,
   resendEmailOtp,
   resendPhoneOtp,
   searchColleges,
   startSignup,
-  verifySignupOtp,
+  verifySignupEmailOtp,
+  verifySignupPhoneOtp,
 } from '../api/authApi';
 import { AuthShowcase } from '../components/AuthShowcase';
 
@@ -82,13 +85,21 @@ const signupSchema = z
       .min(1, 'Full name is required.')
       .min(3, 'Full name must be at least 3 characters.')
       .regex(/^[A-Za-z ]+$/, 'Please enter a valid full name.'),
+    username: z
+      .string()
+      .min(3, 'Username must be at least 3 characters.')
+      .max(30, 'Username must be no more than 30 characters.')
+      .regex(
+        /^[a-z0-9_](?!.*\.\.)[a-z0-9_.]{1,28}[a-z0-9_]$/,
+        'Use lowercase letters, numbers, underscores, and single dots only.',
+      ),
     collegeId: z
       .number({ required_error: 'Please select your college.' })
       .positive(),
     collegeName: z.string().min(1, 'Please select your college.'),
-    collegeEmail: z
+    email: z
       .string()
-      .min(1, 'College email is required.')
+      .min(1, 'Email is required.')
       .email('Please enter a valid email address.'),
     password: z
       .string()
@@ -116,8 +127,8 @@ const signupSchema = z
       .regex(/^[0-9]{10}$/, 'Please enter a valid phone number.'),
     hostelOrCampusArea: z
       .string()
-      .min(1, 'Hostel / campus area is required.')
-      .min(2, 'Please enter a valid hostel / campus area.'),
+      .max(120, 'Please enter a valid hostel / campus area.')
+      .optional(),
     profilePhotoFileName: z.string().optional(),
     emailOtp: z
       .string()
@@ -161,9 +172,10 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 const stepFields = [
   [
     'fullName',
+    'username',
     'collegeId',
     'collegeName',
-    'collegeEmail',
+    'email',
     'password',
     'confirmPassword',
   ],
@@ -198,13 +210,23 @@ export function SignupPage() {
     emailOtp?: string;
     phoneOtp?: string;
   }>({});
+  const [usernameStatus, setUsernameStatus] = useState<{
+    available: boolean;
+    message: string;
+  } | null>(null);
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [activeVerification, setActiveVerification] = useState<
+    'email' | 'phone' | null
+  >(null);
   const [successTrustScore, setSuccessTrustScore] = useState<number | null>(
     null,
   );
 
   const {
     register,
-    handleSubmit,
     setError,
     setValue,
     trigger,
@@ -216,8 +238,9 @@ export function SignupPage() {
     defaultValues: {
       countryCode: '+91',
       fullName: '',
+      username: '',
       collegeName: '',
-      collegeEmail: '',
+      email: '',
       password: '',
       confirmPassword: '',
       department: '',
@@ -232,6 +255,7 @@ export function SignupPage() {
   });
 
   const password = watch('password');
+  const username = watch('username');
   const department = watch('department');
   const yearOfStudy = watch('yearOfStudy');
   const course = watch('course');
@@ -262,6 +286,24 @@ export function SignupPage() {
     return () => window.clearTimeout(timeoutId);
   }, [collegeKeyword]);
 
+  useEffect(() => {
+    setUsernameStatus(null);
+    const normalized = username.trim().toLowerCase();
+    const valid = /^[a-z0-9_](?!.*\.\.)[a-z0-9_.]{1,28}[a-z0-9_]$/.test(
+      normalized,
+    );
+    if (!valid) return;
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setUsernameStatus(await checkUsernameAvailability(normalized));
+      } catch {
+        setUsernameStatus(null);
+      }
+    }, 500);
+    return () => window.clearTimeout(timeoutId);
+  }, [username]);
+
   async function goNext() {
     setServerMessage('');
     const isValid = await trigger(stepFields[step]);
@@ -285,26 +327,23 @@ export function SignupPage() {
   async function validateStepOne() {
     setIsSubmittingStep(true);
     try {
-      const email = watch('collegeEmail');
+      const email = watch('email');
+      const normalizedUsername = watch('username').trim().toLowerCase();
       if (!selectedCollege) {
         setError('collegeName', { message: 'Please select your college.' });
         return;
       }
 
-      if (
-        !email
-          .toLowerCase()
-          .endsWith(`@${selectedCollege.emailDomain.toLowerCase()}`)
-      ) {
-        setError('collegeEmail', {
-          message: `You selected ${selectedCollege.name}. Please use an email ending with @${selectedCollege.emailDomain}.`,
-        });
+      const usernameAvailability =
+        await checkUsernameAvailability(normalizedUsername);
+      if (!usernameAvailability.available) {
+        setError('username', { message: usernameAvailability.message });
         return;
       }
 
       const available = await checkEmailAvailability(email);
       if (!available) {
-        setError('collegeEmail', {
+        setError('email', {
           message: 'This email is already registered.',
         });
         return;
@@ -334,8 +373,9 @@ export function SignupPage() {
 
       const response = await startSignup({
         fullName: values.fullName,
+        username: values.username.trim().toLowerCase(),
         collegeId: values.collegeId,
-        collegeEmail: values.collegeEmail,
+        email: values.email.trim().toLowerCase(),
         password: values.password,
         confirmPassword: values.confirmPassword,
         department: values.department,
@@ -346,15 +386,12 @@ export function SignupPage() {
         course: values.course,
         customCourse: values.customCourse,
         phoneNumber: fullPhoneNumber,
-        hostelOrCampusArea: values.hostelOrCampusArea,
+        hostelOrCampusArea: values.hostelOrCampusArea ?? '',
         profilePhotoFileName: values.profilePhotoFileName,
       });
 
       setUserId(response.userId);
-      setDevCodes({
-        emailOtp: response.devOtpCodes?.emailOtp,
-        phoneOtp: response.devOtpCodes?.phoneOtp,
-      });
+      setDevCodes({});
       setStep(3);
     } catch (error) {
       setServerMessage(getApiErrorMessage(error));
@@ -363,20 +400,21 @@ export function SignupPage() {
     }
   }
 
-  async function verifyAccount(values: SignupFormValues) {
+  async function completeAccount() {
     if (!userId) {
       setServerMessage('Please complete campus details before verification.');
+      return;
+    }
+
+    if (!emailVerified || !phoneVerified) {
+      setServerMessage('Verify both your email and phone number first.');
       return;
     }
 
     setIsSubmittingStep(true);
     setServerMessage('');
     try {
-      const response = await verifySignupOtp(
-        userId,
-        values.emailOtp ?? '',
-        values.phoneOtp ?? '',
-      );
+      const response = await completeSignup(userId);
       setSuccessTrustScore(response.trustScore);
     } catch (error) {
       setServerMessage(getApiErrorMessage(error));
@@ -385,12 +423,13 @@ export function SignupPage() {
     }
   }
 
-  async function handleResend(channel: 'email' | 'phone') {
+  async function handleSendOtp(channel: 'email' | 'phone') {
     if (!userId) {
       return;
     }
 
     setServerMessage('');
+    setActiveVerification(channel);
     try {
       const response =
         channel === 'email'
@@ -401,8 +440,38 @@ export function SignupPage() {
         [channel === 'email' ? 'emailOtp' : 'phoneOtp']:
           response.devOtp ?? undefined,
       }));
+      if (channel === 'email') setEmailOtpSent(true);
+      else setPhoneOtpSent(true);
     } catch (error) {
       setServerMessage(getApiErrorMessage(error));
+    } finally {
+      setActiveVerification(null);
+    }
+  }
+
+  async function handleVerifyOtp(channel: 'email' | 'phone') {
+    if (!userId) return;
+    const otp = watch(channel === 'email' ? 'emailOtp' : 'phoneOtp') ?? '';
+    if (!/^\d{6}$/.test(otp)) {
+      setError(channel === 'email' ? 'emailOtp' : 'phoneOtp', {
+        message: 'Please enter a valid 6-digit OTP.',
+      });
+      return;
+    }
+
+    setActiveVerification(channel);
+    setServerMessage('');
+    try {
+      const response =
+        channel === 'email'
+          ? await verifySignupEmailOtp(userId, otp)
+          : await verifySignupPhoneOtp(userId, otp);
+      setEmailVerified(response.emailVerified);
+      setPhoneVerified(response.phoneVerified);
+    } catch (error) {
+      setServerMessage(getApiErrorMessage(error));
+    } finally {
+      setActiveVerification(null);
     }
   }
 
@@ -447,8 +516,7 @@ export function SignupPage() {
             Account created successfully
           </h1>
           <p className="mt-3 text-slate-600">
-            Welcome to Campus Hub. Your college email and phone number are
-            verified.
+            Welcome to Campus Hub. Your email and phone number are verified.
           </p>
           <div className="mt-6 rounded-lg bg-slate-50 p-4 text-sm text-slate-700">
             Initial Campus Trust Score:{' '}
@@ -467,7 +535,7 @@ export function SignupPage() {
 
   return (
     <SignupShell step={step}>
-      <form onSubmit={handleSubmit(verifyAccount)} className="space-y-8">
+      <form onSubmit={(event) => event.preventDefault()} className="space-y-8">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00677f]">
             Step {step + 1}
@@ -506,6 +574,30 @@ export function SignupPage() {
               error={errors.fullName?.message}
               {...register('fullName')}
             />
+
+            <TextField
+              label="Username"
+              placeholder="Choose a unique username"
+              autoCapitalize="none"
+              autoComplete="username"
+              hint="3-30 characters"
+              error={errors.username?.message}
+              {...register('username', {
+                onChange: (event) => {
+                  const normalized = String(event.target.value).toLowerCase();
+                  setValue('username', normalized, { shouldValidate: true });
+                },
+              })}
+            />
+            {!errors.username?.message && usernameStatus && (
+              <p
+                className={`-mt-3 text-sm ${
+                  usernameStatus.available ? 'text-emerald-700' : 'text-red-600'
+                }`}
+              >
+                {usernameStatus.message}
+              </p>
+            )}
 
             <div className="relative space-y-2">
               <label className="text-sm font-semibold text-slate-900">
@@ -552,16 +644,12 @@ export function SignupPage() {
             </div>
 
             <TextField
-              label="College Email"
-              placeholder="Enter your official college email"
+              label="Email"
+              placeholder="Enter your email"
               type="email"
-              hint={
-                selectedCollege
-                  ? `Must end with @${selectedCollege.emailDomain}`
-                  : 'Select your college first.'
-              }
-              error={errors.collegeEmail?.message}
-              {...register('collegeEmail')}
+              hint="Any valid email; campus verification happens separately."
+              error={errors.email?.message}
+              {...register('email')}
             />
 
             <PasswordField
@@ -688,6 +776,7 @@ export function SignupPage() {
             <TextField
               label="Hostel / Campus Area"
               placeholder="Enter your hostel / campus area"
+              hint="Optional"
               error={errors.hostelOrCampusArea?.message}
               {...register('hostelOrCampusArea')}
             />
@@ -728,19 +817,27 @@ export function SignupPage() {
         {step === 3 && (
           <div className="space-y-5">
             <OtpCard
-              title="College Email"
-              subtitle="OTP sent to your college email"
+              title="Email verification"
+              subtitle="Codes are sent only when you request one."
               devCode={devCodes.emailOtp}
               error={errors.emailOtp?.message}
-              onResend={() => void handleResend('email')}
+              sent={emailOtpSent}
+              verified={emailVerified}
+              busy={activeVerification === 'email'}
+              onSend={() => void handleSendOtp('email')}
+              onVerify={() => void handleVerifyOtp('email')}
               {...register('emailOtp')}
             />
             <OtpCard
-              title="Phone Number"
-              subtitle="OTP sent to your phone number"
+              title="Phone verification"
+              subtitle="Codes are sent only when you request one."
               devCode={devCodes.phoneOtp}
               error={errors.phoneOtp?.message}
-              onResend={() => void handleResend('phone')}
+              sent={phoneOtpSent}
+              verified={phoneVerified}
+              busy={activeVerification === 'phone'}
+              onSend={() => void handleSendOtp('phone')}
+              onVerify={() => void handleVerifyOtp('phone')}
               {...register('phoneOtp')}
             />
           </div>
@@ -749,7 +846,7 @@ export function SignupPage() {
         <div className="flex items-center justify-between border-t border-slate-200 pt-6">
           <button
             className="rounded-lg border border-slate-300 px-5 py-3 text-sm font-semibold text-[#031635] disabled:invisible"
-            disabled={step === 0 || isSubmittingStep}
+            disabled={step === 0 || isSubmittingStep || Boolean(userId)}
             onClick={() => setStep((current) => Math.max(current - 1, 0))}
             type="button"
           >
@@ -774,12 +871,11 @@ export function SignupPage() {
           ) : (
             <button
               className="rounded-lg bg-[#031635] px-6 py-3 text-sm font-semibold text-white disabled:bg-slate-400"
-              disabled={isSubmittingStep}
-              type="submit"
+              disabled={isSubmittingStep || !emailVerified || !phoneVerified}
+              onClick={() => void completeAccount()}
+              type="button"
             >
-              {isSubmittingStep
-                ? 'Verifying...'
-                : 'Verify Account & Create Account'}
+              {isSubmittingStep ? 'Creating account...' : 'Create Account'}
             </button>
           )}
         </div>
@@ -980,34 +1076,74 @@ type OtpCardProps = InputHTMLAttributes<HTMLInputElement> & {
   subtitle: string;
   devCode?: string;
   error?: string;
-  onResend: () => void;
+  sent: boolean;
+  verified: boolean;
+  busy: boolean;
+  onSend: () => void;
+  onVerify: () => void;
 };
 
 const OtpCard = forwardRef<HTMLInputElement, OtpCardProps>(
-  ({ title, subtitle, devCode, error, onResend, ...props }, ref) => (
+  (
+    {
+      title,
+      subtitle,
+      devCode,
+      error,
+      sent,
+      verified,
+      busy,
+      onSend,
+      onVerify,
+      ...props
+    },
+    ref,
+  ) => (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 border-l-4 border-cyan-400 pl-4">
-        <h2 className="text-xl font-bold text-[#031635]">{title}</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-bold text-[#031635]">{title}</h2>
+          {verified && (
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+              Verified
+            </span>
+          )}
+        </div>
         <p className="text-sm text-slate-600">{subtitle}</p>
       </div>
-      <input
-        className={`${fieldClass(Boolean(error))} text-center text-2xl font-bold tracking-[0.5em]`}
-        inputMode="numeric"
-        maxLength={6}
-        placeholder="000000"
-        ref={ref}
-        {...props}
-      />
-      <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+      {sent && !verified && (
+        <input
+          className={`${fieldClass(Boolean(error))} text-center text-2xl font-bold tracking-[0.5em]`}
+          inputMode="numeric"
+          maxLength={6}
+          placeholder="000000"
+          ref={ref}
+          {...props}
+        />
+      )}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
         <span className="text-slate-500">
-          {devCode ? `Dev OTP: ${devCode}` : "Didn't receive it?"}
+          {devCode ? `Dev OTP: ${devCode}` : ''}
         </span>
+        {sent && !verified && (
+          <button
+            className="font-semibold text-[#00677f]"
+            disabled={busy}
+            onClick={onVerify}
+            type="button"
+          >
+            {busy ? 'Checking...' : 'Confirm code'}
+          </button>
+        )}
         <button
-          className="font-semibold text-[#00677f]"
-          onClick={onResend}
+          className="rounded-lg border border-[#00677f] px-4 py-2 font-semibold text-[#00677f] disabled:opacity-50"
+          disabled={busy || verified}
+          onClick={onSend}
           type="button"
         >
-          Resend code
+          {sent
+            ? 'Resend code'
+            : `Verify ${title.startsWith('Email') ? 'Email' : 'Phone'}`}
         </button>
       </div>
       <ErrorText message={error} />

@@ -30,6 +30,9 @@ public class User {
     @Column(nullable = false, unique = true, length = 160)
     private String email;
 
+    @Column(nullable = false, unique = true, length = 30)
+    private String username;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -116,6 +119,7 @@ public class User {
 
     public User(
             String fullName,
+            String username,
             String email,
             String passwordHash,
             String phoneNumber,
@@ -131,6 +135,7 @@ public class User {
             String profilePhotoFileName
     ) {
         this.fullName = fullName;
+        this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
         this.phoneNumber = phoneNumber;
@@ -158,6 +163,10 @@ public class User {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public String getFullName() {
@@ -271,6 +280,24 @@ public class User {
     public void activate() {
         this.emailVerified = true;
         this.phoneVerified = true;
+        this.status = AccountStatus.ACTIVE;
+        this.updatedAt = Instant.now();
+    }
+
+    public void markEmailVerified() {
+        this.emailVerified = true;
+        this.updatedAt = Instant.now();
+    }
+
+    public void markPhoneVerified() {
+        this.phoneVerified = true;
+        this.updatedAt = Instant.now();
+    }
+
+    public void activateAfterVerification() {
+        if (!emailVerified || !phoneVerified) {
+            throw new IllegalStateException("Email and phone verification are required.");
+        }
         this.status = AccountStatus.ACTIVE;
         this.updatedAt = Instant.now();
     }

@@ -9,8 +9,9 @@ export type CollegeSummary = {
 
 export type SignupStartPayload = {
   fullName: string;
+  username: string;
   collegeId: number;
-  collegeEmail: string;
+  email: string;
   password: string;
   confirmPassword: string;
   department: string;
@@ -48,6 +49,12 @@ export type SignupVerifyResponse = {
   userId: number;
   accountStatus: string;
   trustScore: number;
+};
+
+export type SignupChannelVerifyResponse = {
+  userId: number;
+  emailVerified: boolean;
+  phoneVerified: boolean;
 };
 
 export type AuthUser = {
@@ -107,6 +114,13 @@ export async function checkEmailAvailability(email: string) {
   return response.data.data.available;
 }
 
+export async function checkUsernameAvailability(username: string) {
+  const response = await apiClient.get<
+    ApiResponse<{ available: boolean; message: string }>
+  >('/auth/check-username', { params: { username } });
+  return response.data.data;
+}
+
 export async function checkPhoneAvailability(phoneNumber: string) {
   const response = await apiClient.post<ApiResponse<{ available: boolean }>>(
     '/auth/check-phone',
@@ -127,7 +141,7 @@ export async function startSignup(payload: SignupStartPayload) {
 
 export async function resendEmailOtp(userId: number) {
   const response = await apiClient.post<ApiResponse<OtpSendResponse>>(
-    '/auth/send-email-otp',
+    '/auth/signup/email/send-otp',
     {
       userId,
     },
@@ -137,7 +151,7 @@ export async function resendEmailOtp(userId: number) {
 
 export async function resendPhoneOtp(userId: number) {
   const response = await apiClient.post<ApiResponse<OtpSendResponse>>(
-    '/auth/send-phone-otp',
+    '/auth/signup/phone/send-otp',
     {
       userId,
     },
@@ -145,18 +159,24 @@ export async function resendPhoneOtp(userId: number) {
   return response.data.data;
 }
 
-export async function verifySignupOtp(
-  userId: number,
-  emailOtp: string,
-  phoneOtp: string,
-) {
+export async function verifySignupEmailOtp(userId: number, otp: string) {
+  const response = await apiClient.post<
+    ApiResponse<SignupChannelVerifyResponse>
+  >('/auth/signup/email/verify-otp', { userId, otp });
+  return response.data.data;
+}
+
+export async function verifySignupPhoneOtp(userId: number, otp: string) {
+  const response = await apiClient.post<
+    ApiResponse<SignupChannelVerifyResponse>
+  >('/auth/signup/phone/verify-otp', { userId, otp });
+  return response.data.data;
+}
+
+export async function completeSignup(userId: number) {
   const response = await apiClient.post<ApiResponse<SignupVerifyResponse>>(
-    '/auth/verify-signup-otp',
-    {
-      userId,
-      emailOtp,
-      phoneOtp,
-    },
+    '/auth/signup/complete',
+    { userId },
   );
   return response.data.data;
 }

@@ -13,12 +13,20 @@ public record SignupStartRequest(
         @Pattern(regexp = "^[A-Za-z ]+$", message = "Please enter a valid full name.")
         String fullName,
 
+        @NotBlank(message = "Username is required.")
+        @Size(min = 3, max = 30, message = "Username must be between 3 and 30 characters.")
+        @Pattern(
+                regexp = "^[a-z0-9_](?!.*\\.\\.)[a-z0-9_.]{1,28}[a-z0-9_]$",
+                message = "Use lowercase letters, numbers, underscores, and single dots only."
+        )
+        String username,
+
         @NotNull(message = "Please select your college.")
         Long collegeId,
 
-        @NotBlank(message = "College email is required.")
+        @NotBlank(message = "Email is required.")
         @Email(message = "Please enter a valid email address.")
-        String collegeEmail,
+        String email,
 
         @NotBlank(message = "Password is required.")
         @Pattern(
@@ -52,8 +60,7 @@ public record SignupStartRequest(
         @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Please enter a valid phone number.")
         String phoneNumber,
 
-        @NotBlank(message = "Hostel / campus area is required.")
-        @Size(min = 2, message = "Please enter a valid hostel / campus area.")
+        @Size(max = 120, message = "Please enter a valid hostel / campus area.")
         String hostelOrCampusArea,
 
         String profilePhotoFileName

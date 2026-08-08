@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OtpService {
 
     private static final int MAX_ATTEMPTS = 5;
+    private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
 
     private final OtpVerificationRepository otpVerificationRepository;
     private final PasswordEncoder passwordEncoder;
@@ -35,6 +36,15 @@ public class OtpService {
 
     @Transactional
     public String createOtp(User user, OtpChannel channel) {
+        Instant now = Instant.now();
+        otpVerificationRepository.findTopByUserIdAndChannelOrderByCreatedAtDesc(user.getId(), channel)
+                .ifPresent(latest -> {
+                    Instant nextAllowedAt = latest.getCreatedAt().plus(RESEND_COOLDOWN);
+                    if (nextAllowedAt.isAfter(now)) {
+                        long seconds = Math.max(1, Duration.between(now, nextAllowedAt).toSeconds());
+                        throw new BadRequestException("Please wait " + seconds + " seconds before requesting another OTP.");
+                    }
+                });
         String otp = String.format("%06d", secureRandom.nextInt(1_000_000));
         String destination = channel == OtpChannel.EMAIL ? user.getEmail() : user.getPhoneNumber();
         OtpVerification verification = new OtpVerification(
@@ -42,7 +52,7 @@ public class OtpService {
                 channel,
                 passwordEncoder.encode(otp),
                 destination,
-                Instant.now().plus(expiry)
+                now.plus(expiry)
         );
         otpVerificationRepository.save(verification);
         return otp;

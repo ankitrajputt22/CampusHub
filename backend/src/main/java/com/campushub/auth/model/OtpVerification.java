@@ -76,6 +76,10 @@ public class OtpVerification {
         return attempts;
     }
 
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
     public void incrementAttempts() {
         this.attempts++;
     }

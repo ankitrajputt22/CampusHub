@@ -176,7 +176,8 @@ class StudentDashboardIntegrationTest {
         Map<String, Object> signupRequest = Map.ofEntries(
                 Map.entry("fullName", fullName),
                 Map.entry("collegeId", collegeId),
-                Map.entry("collegeEmail", email),
+                Map.entry("username", email.substring(0, email.indexOf('@'))),
+                Map.entry("email", email),
                 Map.entry("password", "Campus@123"),
                 Map.entry("confirmPassword", "Campus@123"),
                 Map.entry("department", "Computer Science Engineering"),
@@ -196,15 +197,7 @@ class StudentDashboardIntegrationTest {
         JsonNode signupData = objectMapper.readTree(signupResult.getResponse().getContentAsString()).get("data");
         Long userId = signupData.get("userId").asLong();
 
-        Map<String, Object> verifyRequest = Map.of(
-                "userId", userId,
-                "emailOtp", signupData.get("devOtpCodes").get("emailOtp").asText(),
-                "phoneOtp", signupData.get("devOtpCodes").get("phoneOtp").asText()
-        );
-        mockMvc.perform(post("/api/auth/verify-signup-otp")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(verifyRequest)))
-                .andExpect(status().isOk());
+        com.campushub.auth.SignupTestSupport.manuallyVerifyAndComplete(mockMvc, objectMapper, userId);
 
         Map<String, Object> loginRequest = Map.of(
                 "email", email,

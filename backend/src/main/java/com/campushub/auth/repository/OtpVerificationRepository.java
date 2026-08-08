@@ -11,4 +11,9 @@ public interface OtpVerificationRepository extends JpaRepository<OtpVerification
             Long userId,
             OtpChannel channel
     );
+
+    Optional<OtpVerification> findTopByUserIdAndChannelOrderByCreatedAtDesc(
+            Long userId,
+            OtpChannel channel
+    );
 }

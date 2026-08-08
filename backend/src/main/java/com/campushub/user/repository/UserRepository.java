@@ -19,6 +19,8 @@ public interface UserRepository
 
     boolean existsByEmailIgnoreCase(String email);
 
+    boolean existsByUsernameIgnoreCase(String username);
+
     boolean existsByPhoneNumber(String phoneNumber);
 
     Optional<User> findByEmailIgnoreCase(String email);
