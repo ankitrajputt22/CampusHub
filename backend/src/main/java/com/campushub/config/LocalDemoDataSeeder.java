@@ -528,6 +528,7 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
         }
         User user = new User(
                 definition.fullName(),
+                definition.email().substring(0, definition.email().indexOf('@')),
                 definition.email(),
                 passwordEncoder.encode(demoPassword),
                 definition.phoneNumber(),

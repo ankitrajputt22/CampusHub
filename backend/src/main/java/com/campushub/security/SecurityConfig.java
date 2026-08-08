@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/colleges/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/check-username").permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/user/profile/photo/content/**",
@@ -46,6 +47,11 @@ public class SecurityConfig {
                                 "/api/auth/check-email",
                                 "/api/auth/check-phone",
                                 "/api/auth/signup/start",
+                                "/api/auth/signup/email/send-otp",
+                                "/api/auth/signup/email/verify-otp",
+                                "/api/auth/signup/phone/send-otp",
+                                "/api/auth/signup/phone/verify-otp",
+                                "/api/auth/signup/complete",
                                 "/api/auth/send-email-otp",
                                 "/api/auth/send-phone-otp",
                                 "/api/auth/verify-signup-otp",

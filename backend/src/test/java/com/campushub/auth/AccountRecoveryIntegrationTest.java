@@ -226,7 +226,8 @@ class AccountRecoveryIntegrationTest {
         Map<String, Object> signupRequest = Map.ofEntries(
                 Map.entry("fullName", "Recovery Student"),
                 Map.entry("collegeId", 1),
-                Map.entry("collegeEmail", email),
+                Map.entry("username", email.substring(0, email.indexOf('@'))),
+                Map.entry("email", email),
                 Map.entry("password", password),
                 Map.entry("confirmPassword", password),
                 Map.entry("department", "Computer Science Engineering"),
@@ -245,15 +246,6 @@ class AccountRecoveryIntegrationTest {
                 result.getResponse().getContentAsString()
         ).path("data");
 
-        mockMvc.perform(post("/api/auth/verify-signup-otp")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of(
-                                "userId", data.path("userId").asLong(),
-                                "emailOtp", data.path("devOtpCodes")
-                                        .path("emailOtp").asText(),
-                                "phoneOtp", data.path("devOtpCodes")
-                                        .path("phoneOtp").asText()
-                        ))))
-                .andExpect(status().isOk());
+        SignupTestSupport.manuallyVerifyAndComplete(mockMvc, objectMapper, data.path("userId").asLong());
     }
 }

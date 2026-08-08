@@ -247,6 +247,7 @@ class AdminPanelIntegrationTest {
     ) {
         User user = new User(
                 name,
+                email.substring(0, email.indexOf('@')),
                 email,
                 "not-used-in-token-based-test",
                 phone,

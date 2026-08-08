@@ -8,8 +8,12 @@ import com.campushub.auth.dto.OtpDevCodesResponse;
 import com.campushub.auth.dto.OtpSendResponse;
 import com.campushub.auth.dto.SignupStartRequest;
 import com.campushub.auth.dto.SignupStartResponse;
+import com.campushub.auth.dto.SignupChannelVerifyRequest;
+import com.campushub.auth.dto.SignupChannelVerifyResponse;
+import com.campushub.auth.dto.SignupCompleteRequest;
 import com.campushub.auth.dto.SignupVerifyRequest;
 import com.campushub.auth.dto.SignupVerifyResponse;
+import com.campushub.auth.dto.UsernameAvailabilityResponse;
 import com.campushub.auth.model.OtpChannel;
 import com.campushub.college.model.College;
 import com.campushub.college.service.CollegeService;
@@ -29,12 +33,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.regex.Pattern;
 
 @Service
 public class SignupService {
 
     private static final int RESEND_AFTER_SECONDS = 60;
     private static final int INITIAL_TRUST_SCORE = 30;
+    private static final Pattern USERNAME_PATTERN = Pattern.compile(
+            "^[a-z0-9_](?!.*\\.\\.)[a-z0-9_.]{1,28}[a-z0-9_]$"
+    );
 
     private final UserRepository userRepository;
     private final TrustScoreRepository trustScoreRepository;
@@ -75,13 +83,31 @@ public class SignupService {
         return new AvailabilityResponse(!userRepository.existsByPhoneNumber(normalizePhone(phoneNumber)));
     }
 
+    @Transactional(readOnly = true)
+    public UsernameAvailabilityResponse checkUsername(String rawUsername) {
+        String username = normalizeUsername(rawUsername);
+        if (!USERNAME_PATTERN.matcher(username).matches()) {
+            return new UsernameAvailabilityResponse(
+                    false,
+                    "Use 3-30 lowercase letters, numbers, underscores, or single dots."
+            );
+        }
+        boolean available = !userRepository.existsByUsernameIgnoreCase(username);
+        return new UsernameAvailabilityResponse(
+                available,
+                available ? "Username is available." : "This username is already taken."
+        );
+    }
+
     @Transactional
     public SignupStartResponse startSignup(SignupStartRequest request) {
         College college = collegeService.getActiveCollege(request.collegeId());
-        String email = normalizeEmail(request.collegeEmail());
+        String username = normalizeUsername(request.username());
+        String email = normalizeEmail(request.email());
         String phoneNumber = normalizePhone(request.phoneNumber());
 
-        validateEmailDomain(email, college);
+        ensureValidUsername(username);
+        ensureUniqueUsername(username);
         ensureUniqueEmail(email);
         ensureUniquePhone(phoneNumber);
         validateOtherValue(request.department(), request.customDepartment(), "Please enter your department / branch.");
@@ -90,6 +116,7 @@ public class SignupService {
 
         User user = new User(
                 request.fullName().trim(),
+                username,
                 email,
                 passwordEncoder.encode(request.password()),
                 phoneNumber,
@@ -101,26 +128,28 @@ public class SignupService {
                 request.yearOfStudy().trim(),
                 trimToNull(request.customYearOfStudy()),
                 trimToNull(request.rollNumber()),
-                request.hostelOrCampusArea().trim(),
+                normalizeOptionalToEmpty(request.hostelOrCampusArea()),
                 trimToNull(request.profilePhotoFileName())
         );
 
         User savedUser = userRepository.save(user);
-        String emailOtp = otpService.createOtp(savedUser, OtpChannel.EMAIL);
-        String phoneOtp = otpService.createOtp(savedUser, OtpChannel.PHONE);
 
         return new SignupStartResponse(
                 savedUser.getId(),
                 savedUser.getStatus().name(),
                 otpService.expirySeconds(),
                 RESEND_AFTER_SECONDS,
-                exposeDevOtpCodes ? new OtpDevCodesResponse(emailOtp, phoneOtp) : null
+                null
         );
     }
 
     @Transactional
     public OtpSendResponse resendOtp(Long userId, OtpChannel channel) {
         User user = getPendingUser(userId);
+        if ((channel == OtpChannel.EMAIL && user.isEmailVerified())
+                || (channel == OtpChannel.PHONE && user.isPhoneVerified())) {
+            throw new BadRequestException("This contact method is already verified.");
+        }
         String otp = otpService.createOtp(user, channel);
         return new OtpSendResponse(
                 user.getId(),
@@ -132,18 +161,49 @@ public class SignupService {
     }
 
     @Transactional
+    public SignupChannelVerifyResponse verifyChannel(SignupChannelVerifyRequest request, OtpChannel channel) {
+        User user = getPendingUser(request.userId());
+        if ((channel == OtpChannel.EMAIL && user.isEmailVerified())
+                || (channel == OtpChannel.PHONE && user.isPhoneVerified())) {
+            return new SignupChannelVerifyResponse(user.getId(), user.isEmailVerified(), user.isPhoneVerified());
+        }
+        otpService.verifyOtp(user.getId(), channel, request.otp());
+        if (channel == OtpChannel.EMAIL) {
+            user.markEmailVerified();
+        } else {
+            user.markPhoneVerified();
+        }
+        return new SignupChannelVerifyResponse(user.getId(), user.isEmailVerified(), user.isPhoneVerified());
+    }
+
+    @Transactional
+    public SignupVerifyResponse completeSignup(SignupCompleteRequest request) {
+        User user = getPendingUser(request.userId());
+        if (!user.isEmailVerified() || !user.isPhoneVerified()) {
+            throw new BadRequestException("Verify both your email and phone number before creating the account.");
+        }
+        return activateAccount(user);
+    }
+
+    @Transactional
     public SignupVerifyResponse verifySignup(SignupVerifyRequest request) {
         User user = getPendingUser(request.userId());
         otpService.verifyOtp(user.getId(), OtpChannel.EMAIL, request.emailOtp());
+        user.markEmailVerified();
         otpService.verifyOtp(user.getId(), OtpChannel.PHONE, request.phoneOtp());
-        user.activate();
+        user.markPhoneVerified();
+        return activateAccount(user);
+    }
+
+    private SignupVerifyResponse activateAccount(User user) {
+        user.activateAfterVerification();
         trustScoreRepository.save(new TrustScore(user, INITIAL_TRUST_SCORE, "College email and phone verified"));
         notificationService.notify(
                 user,
                 NotificationType.ACCOUNT,
                 NotificationPriority.MEDIUM,
                 "Account verified",
-                "Your college email and phone number are verified. Welcome to Campus Hub.",
+                "Your email and phone number are verified. Welcome to Campus Hub.",
                 RelatedEntityType.PROFILE,
                 user.getId(),
                 "/student/profile"
@@ -175,11 +235,15 @@ public class SignupService {
         return user;
     }
 
-    private void validateEmailDomain(String email, College college) {
-        String expectedDomain = "@" + college.getEmailDomain().toLowerCase();
-        if (!email.endsWith(expectedDomain)) {
-            throw new BadRequestException("You selected " + college.getName()
-                    + ". Please use an email ending with " + expectedDomain + ".");
+    private void ensureValidUsername(String username) {
+        if (!USERNAME_PATTERN.matcher(username).matches()) {
+            throw new BadRequestException("Please enter a valid username.");
+        }
+    }
+
+    private void ensureUniqueUsername(String username) {
+        if (userRepository.existsByUsernameIgnoreCase(username)) {
+            throw new ResourceConflictException("This username is already taken.");
         }
     }
 
@@ -205,6 +269,10 @@ public class SignupService {
         return email == null ? "" : email.trim().toLowerCase();
     }
 
+    private String normalizeUsername(String username) {
+        return username == null ? "" : username.trim().toLowerCase();
+    }
+
     private String normalizePhone(String phoneNumber) {
         return phoneNumber == null ? "" : phoneNumber.replaceAll("\\s+", "");
     }
@@ -214,5 +282,9 @@ public class SignupService {
             return null;
         }
         return value.trim();
+    }
+
+    private String normalizeOptionalToEmpty(String value) {
+        return value == null ? "" : value.trim();
     }
 }

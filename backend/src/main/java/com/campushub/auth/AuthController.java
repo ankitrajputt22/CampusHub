@@ -15,14 +15,19 @@ import com.campushub.auth.dto.PasswordResetVerifyResponse;
 import com.campushub.auth.dto.RefreshTokenRequest;
 import com.campushub.auth.dto.SignupStartRequest;
 import com.campushub.auth.dto.SignupStartResponse;
+import com.campushub.auth.dto.SignupChannelVerifyRequest;
+import com.campushub.auth.dto.SignupChannelVerifyResponse;
+import com.campushub.auth.dto.SignupCompleteRequest;
 import com.campushub.auth.dto.SignupVerifyRequest;
 import com.campushub.auth.dto.SignupVerifyResponse;
+import com.campushub.auth.dto.UsernameAvailabilityResponse;
 import com.campushub.auth.model.OtpChannel;
 import com.campushub.auth.service.AuthSessionService;
 import com.campushub.auth.service.LoginService;
 import com.campushub.auth.service.PasswordResetService;
 import com.campushub.auth.service.RefreshTokenService;
 import com.campushub.auth.service.SignupService;
+import com.campushub.auth.service.UsernameAvailabilityRateLimiter;
 import com.campushub.common.api.ApiResponse;
 import com.campushub.common.exception.UnauthorizedException;
 import com.campushub.security.AuthenticatedUser;
@@ -30,6 +35,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,19 +50,22 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final PasswordResetService passwordResetService;
     private final AuthSessionService authSessionService;
+    private final UsernameAvailabilityRateLimiter usernameAvailabilityRateLimiter;
 
     public AuthController(
             SignupService signupService,
             LoginService loginService,
             RefreshTokenService refreshTokenService,
             PasswordResetService passwordResetService,
-            AuthSessionService authSessionService
+            AuthSessionService authSessionService,
+            UsernameAvailabilityRateLimiter usernameAvailabilityRateLimiter
     ) {
         this.signupService = signupService;
         this.loginService = loginService;
         this.refreshTokenService = refreshTokenService;
         this.passwordResetService = passwordResetService;
         this.authSessionService = authSessionService;
+        this.usernameAvailabilityRateLimiter = usernameAvailabilityRateLimiter;
     }
 
     @PostMapping("/check-email")
@@ -68,9 +78,49 @@ public class AuthController {
         return ApiResponse.success("Phone availability checked", signupService.checkPhone(request.value()));
     }
 
+    @GetMapping("/check-username")
+    public ApiResponse<UsernameAvailabilityResponse> checkUsername(
+            @RequestParam String username,
+            HttpServletRequest servletRequest
+    ) {
+        usernameAvailabilityRateLimiter.check(servletRequest.getRemoteAddr());
+        return ApiResponse.success("Username availability checked", signupService.checkUsername(username));
+    }
+
     @PostMapping("/signup/start")
     public ApiResponse<SignupStartResponse> startSignup(@Valid @RequestBody SignupStartRequest request) {
-        return ApiResponse.success("Verification OTPs sent", signupService.startSignup(request));
+        return ApiResponse.success("Signup details saved. Verify your email and phone number.",
+                signupService.startSignup(request));
+    }
+
+    @PostMapping("/signup/email/send-otp")
+    public ApiResponse<OtpSendResponse> sendSignupEmailOtp(@Valid @RequestBody OtpResendRequest request) {
+        return ApiResponse.success("Email OTP sent", signupService.resendOtp(request.userId(), OtpChannel.EMAIL));
+    }
+
+    @PostMapping("/signup/email/verify-otp")
+    public ApiResponse<SignupChannelVerifyResponse> verifySignupEmailOtp(
+            @Valid @RequestBody SignupChannelVerifyRequest request
+    ) {
+        return ApiResponse.success("Email verified", signupService.verifyChannel(request, OtpChannel.EMAIL));
+    }
+
+    @PostMapping("/signup/phone/send-otp")
+    public ApiResponse<OtpSendResponse> sendSignupPhoneOtp(@Valid @RequestBody OtpResendRequest request) {
+        return ApiResponse.success("Phone OTP sent", signupService.resendOtp(request.userId(), OtpChannel.PHONE));
+    }
+
+    @PostMapping("/signup/phone/verify-otp")
+    public ApiResponse<SignupChannelVerifyResponse> verifySignupPhoneOtp(
+            @Valid @RequestBody SignupChannelVerifyRequest request
+    ) {
+        return ApiResponse.success("Phone number verified", signupService.verifyChannel(request, OtpChannel.PHONE));
+    }
+
+    @PostMapping("/signup/complete")
+    public ApiResponse<SignupVerifyResponse> completeSignup(@Valid @RequestBody SignupCompleteRequest request) {
+        return ApiResponse.success("Account created successfully. Welcome to Campus Hub!",
+                signupService.completeSignup(request));
     }
 
     @PostMapping("/send-email-otp")
