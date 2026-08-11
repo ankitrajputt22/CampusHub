@@ -53,6 +53,20 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
             null,
             100
     );
+    private static final DemoUser DEMO_SUPER_ADMIN = new DemoUser(
+            "Campus Hub Super Admin",
+            "super.admin@campushub.local",
+            "+919700000099",
+            "Platform Governance",
+            "Campus Hub Operations",
+            "Staff",
+            "CHSUPER099",
+            "Platform Office",
+            "Local Super Admin account for testing platform ownership workflows.",
+            null,
+            null,
+            100
+    );
 
     private static final List<DemoUser> DEMO_USERS = List.of(
             new DemoUser(
@@ -430,6 +444,22 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
 
         Map<String, User> users = new LinkedHashMap<>();
         int createdUsers = 0;
+
+        User existingSuperAdmin = userRepository.findByEmailIgnoreCase(DEMO_SUPER_ADMIN.email())
+                .orElse(null);
+        if (existingSuperAdmin == null) {
+            User superAdmin = createUser(DEMO_SUPER_ADMIN, college);
+            superAdmin.changeRole(UserRole.SUPER_ADMIN);
+            userRepository.save(superAdmin);
+            createdUsers++;
+        } else {
+            validateExistingUser(existingSuperAdmin, college);
+            if (existingSuperAdmin.getRole() != UserRole.SUPER_ADMIN) {
+                throw new IllegalStateException(
+                        "Existing demo Super Admin email is not a Super Admin account."
+                );
+            }
+        }
 
         User existingAdmin = userRepository.findByEmailIgnoreCase(DEMO_ADMIN.email())
                 .orElse(null);

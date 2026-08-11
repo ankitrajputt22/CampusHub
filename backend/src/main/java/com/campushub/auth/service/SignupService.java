@@ -197,7 +197,9 @@ public class SignupService {
 
     private SignupVerifyResponse activateAccount(User user) {
         user.activateAfterVerification();
-        trustScoreRepository.save(new TrustScore(user, INITIAL_TRUST_SCORE, "College email and phone verified"));
+        trustScoreRepository.save(new TrustScore(
+                user, INITIAL_TRUST_SCORE, "Email, phone, and college verified"
+        ));
         notificationService.notify(
                 user,
                 NotificationType.ACCOUNT,

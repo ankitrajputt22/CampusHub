@@ -100,6 +100,10 @@ public class User {
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id")
+    private User createdBy;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
     private AccountStatus status;
@@ -257,6 +261,10 @@ public class User {
         return lastLoginAt;
     }
 
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
     public TrustScore getTrustScore() {
         return trustScore;
     }
@@ -366,6 +374,11 @@ public class User {
 
     public void changeRole(UserRole role) {
         this.role = role;
+        this.updatedAt = Instant.now();
+    }
+
+    public void recordCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
         this.updatedAt = Instant.now();
     }
 }

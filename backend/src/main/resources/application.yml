@@ -4,14 +4,17 @@ server:
 spring:
   application:
     name: campus-hub-backend
+
   servlet:
     multipart:
-      max-file-size: 2MB
-      max-request-size: 11MB
+      max-file-size: 5MB
+      max-request-size: 16MB
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/campus_hub?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
     username: ${SPRING_DATASOURCE_USERNAME:campus_hub}
     password: ${SPRING_DATASOURCE_PASSWORD:}
+
   jpa:
     hibernate:
       ddl-auto: validate
@@ -19,6 +22,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
   flyway:
     enabled: true
 
@@ -35,18 +39,29 @@ springdoc:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
+
   security:
     jwt-secret: ${JWT_SECRET:}
     access-token-minutes: ${JWT_ACCESS_TOKEN_MINUTES:60}
     refresh-token-days: ${JWT_REFRESH_TOKEN_DAYS:1}
     remember-me-refresh-token-days: ${JWT_REMEMBER_ME_REFRESH_TOKEN_DAYS:30}
+
   otp:
     expiry-minutes: ${OTP_EXPIRY_MINUTES:10}
     expose-dev-codes: ${OTP_EXPOSE_DEV_CODES:false}
+
   profile-photo:
     storage-directory: ${PROFILE_PHOTO_STORAGE_DIRECTORY:./data/profile-photos}
+
   listing-image:
     storage-directory: ${LISTING_IMAGE_STORAGE_DIRECTORY:./data/listing-images}
+
+  support-attachment:
+    storage-directory: ${SUPPORT_ATTACHMENT_STORAGE_DIRECTORY:./data/support-attachments}
+
+  chat:
+    max-messages-per-minute: ${CHAT_MAX_MESSAGES_PER_MINUTE:30}
+
   razorpay:
     key-id: ${RAZORPAY_KEY_ID:}
     key-secret: ${RAZORPAY_KEY_SECRET:}

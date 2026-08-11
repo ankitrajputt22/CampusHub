@@ -5,11 +5,14 @@ import com.campushub.college.model.CollegeStatus;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface CollegeRepository extends JpaRepository<College, Long> {
+public interface CollegeRepository
+        extends JpaRepository<College, Long>, JpaSpecificationExecutor<College> {
 
     List<College> findTop25ByActiveTrueAndStatusAndNameContainingIgnoreCaseOrderByNameAsc(
             CollegeStatus status,
@@ -17,6 +20,10 @@ public interface CollegeRepository extends JpaRepository<College, Long> {
     );
 
     Optional<College> findByCodeIgnoreCase(String code);
+
+    boolean existsByCodeIgnoreCase(String code);
+
+    long countByStatus(CollegeStatus status);
 
     @Query("""
             select college

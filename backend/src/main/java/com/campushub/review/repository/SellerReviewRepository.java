@@ -45,6 +45,31 @@ public interface SellerReviewRepository
             """)
     double averageRatingByRevieweeId(@Param("revieweeId") Long revieweeId);
 
+    @Query("""
+            select count(review) from SellerReview review
+            where review.reviewee.id = :revieweeId
+              and review.status = com.campushub.review.model.ReviewStatus.VISIBLE
+              and review.order.status = com.campushub.order.model.OrderStatus.COMPLETED
+            """)
+    long countCompletedVisibleByRevieweeId(@Param("revieweeId") Long revieweeId);
+
+    @Query("""
+            select coalesce(avg(review.rating), 0) from SellerReview review
+            where review.reviewee.id = :revieweeId
+              and review.status = com.campushub.review.model.ReviewStatus.VISIBLE
+              and review.order.status = com.campushub.order.model.OrderStatus.COMPLETED
+            """)
+    double averageCompletedVisibleByRevieweeId(@Param("revieweeId") Long revieweeId);
+
+    @Query("""
+            select count(review) from SellerReview review
+            where review.reviewee.id = :revieweeId
+              and review.status = com.campushub.review.model.ReviewStatus.VISIBLE
+              and review.order.status = com.campushub.order.model.OrderStatus.COMPLETED
+              and review.rating >= 4
+            """)
+    long countPositiveCompletedVisibleByRevieweeId(@Param("revieweeId") Long revieweeId);
+
     @EntityGraph(attributePaths = "reviewer")
     List<SellerReview> findTop5ByRevieweeIdAndStatusOrderByCreatedAtDesc(
             Long revieweeId,

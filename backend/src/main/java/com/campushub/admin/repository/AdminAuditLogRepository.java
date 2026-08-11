@@ -28,4 +28,9 @@ public interface AdminAuditLogRepository
             String targetType,
             Long targetId
     );
+
+    @EntityGraph(attributePaths = "admin")
+    List<AdminAuditLog> findTop20ByAdminIdOrderByCreatedAtDesc(Long adminId);
+
+    long countByAdminId(Long adminId);
 }

@@ -339,16 +339,13 @@ public class ProfileService {
     }
 
     private void notifyTrustScoreChange(User user, int previousScore, int newScore) {
-        if (previousScore == newScore) {
-            return;
-        }
+        if (previousScore == newScore) return;
         notificationService.notify(
                 user,
                 NotificationType.SYSTEM,
                 NotificationPriority.LOW,
                 "Trust score updated",
-                "Your Campus Trust Score changed from " + previousScore
-                        + " to " + newScore + ".",
+                "Your Campus Trust Score changed from " + previousScore + " to " + newScore + ".",
                 RelatedEntityType.TRUST_SCORE,
                 user.getId(),
                 "/student/profile"

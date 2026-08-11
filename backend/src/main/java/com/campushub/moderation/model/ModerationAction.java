@@ -113,4 +113,8 @@ public class ModerationAction {
     public Instant getCreatedAt() {
         return createdAt;
     }
+
+    public Report getReport() {
+        return report;
+    }
 }

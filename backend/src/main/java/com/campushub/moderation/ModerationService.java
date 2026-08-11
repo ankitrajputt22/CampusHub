@@ -40,6 +40,7 @@ import com.campushub.user.model.AccountStatus;
 import com.campushub.user.model.User;
 import com.campushub.user.model.UserRole;
 import com.campushub.user.repository.UserRepository;
+import com.campushub.user.trustscore.TrustScoreService;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -67,6 +68,7 @@ public class ModerationService {
     private final ModerationActionRepository actionRepository;
     private final NotificationService notificationService;
     private final RefreshTokenService refreshTokenService;
+    private final TrustScoreService trustScoreService;
 
     public ModerationService(
             UserRepository userRepository,
@@ -77,7 +79,8 @@ public class ModerationService {
             ReportRepository reportRepository,
             ModerationActionRepository actionRepository,
             NotificationService notificationService,
-            RefreshTokenService refreshTokenService
+            RefreshTokenService refreshTokenService,
+            TrustScoreService trustScoreService
     ) {
         this.userRepository = userRepository;
         this.adminAccessService = adminAccessService;
@@ -88,6 +91,7 @@ public class ModerationService {
         this.actionRepository = actionRepository;
         this.notificationService = notificationService;
         this.refreshTokenService = refreshTokenService;
+        this.trustScoreService = trustScoreService;
     }
 
     @Transactional(readOnly = true)
@@ -344,6 +348,10 @@ public class ModerationService {
                 RelatedEntityType.LISTING,
                 listing.getId(),
                 "/student/my-marketplace"
+        );
+        trustScoreService.recalculateAndSave(
+                listing.getSeller().getId(), "MODERATION", listing.getId(),
+                "Listing moderation action: LISTING_DELETED", true
         );
         return result(
                 report,
@@ -625,6 +633,10 @@ public class ModerationService {
                 review.getId(),
                 "/student/reviews"
         );
+        trustScoreService.recalculateAndSave(
+                review.getReviewee().getId(), "MODERATION", review.getId(),
+                "Review moderation action: " + actionType.name(), true
+        );
         return result(
                 report,
                 actionType,
@@ -690,6 +702,10 @@ public class ModerationService {
         if (nextStatus == AccountStatus.SUSPENDED || nextStatus == AccountStatus.BLOCKED) {
             refreshTokenService.revokeAllForUser(target.getId());
         }
+        trustScoreService.recalculateAndSave(
+                target.getId(), "MODERATION", target.getId(),
+                "Account moderation action: " + actionType.name(), true
+        );
         return result(
                 report,
                 actionType,
