@@ -25,6 +25,12 @@ app:
     storage-directory: target/test-profile-photos
   listing-image:
     storage-directory: target/test-listing-images
+  chat:
+    max-messages-per-minute: 100
+  support-attachment:
+    storage-directory: target/test-support-attachments
+  support:
+    public-rate-limit-per-hour: 3
   razorpay:
     key-id: rzp_test_campus_hub
     key-secret: campus-hub-test-razorpay-secret

@@ -22,6 +22,7 @@ import com.campushub.user.model.AccountStatus;
 import com.campushub.user.model.User;
 import com.campushub.user.model.UserRole;
 import com.campushub.user.repository.UserRepository;
+import com.campushub.user.trustscore.TrustScoreService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -35,17 +36,20 @@ public class ReviewService {
     private final MarketplaceOrderRepository orderRepository;
     private final SellerReviewRepository reviewRepository;
     private final NotificationService notificationService;
+    private final TrustScoreService trustScoreService;
 
     public ReviewService(
             UserRepository userRepository,
             MarketplaceOrderRepository orderRepository,
             SellerReviewRepository reviewRepository,
-            NotificationService notificationService
+            NotificationService notificationService,
+            TrustScoreService trustScoreService
     ) {
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.reviewRepository = reviewRepository;
         this.notificationService = notificationService;
+        this.trustScoreService = trustScoreService;
     }
 
     @Transactional(readOnly = true)
@@ -128,6 +132,9 @@ public class ReviewService {
                 RelatedEntityType.REVIEW,
                 review.getId(),
                 "/student/reviews"
+        );
+        trustScoreService.recalculateAndSave(
+                order.getSeller().getId(), "REVIEW", review.getId(), "Completed-order review received", true
         );
         return toItem(review);
     }

@@ -23,7 +23,7 @@ public class College {
     @Column(nullable = false, unique = true, length = 20)
     private String code;
 
-    @Column(name = "email_domain", nullable = false, length = 120)
+    @Column(name = "email_domain", length = 120)
     private String emailDomain;
 
     @Column(nullable = false, length = 100)
@@ -31,6 +31,12 @@ public class College {
 
     @Column(nullable = false, length = 100)
     private String state;
+
+    @Column(nullable = false, length = 100)
+    private String country = "India";
+
+    @Column(length = 500)
+    private String description;
 
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
@@ -43,6 +49,26 @@ public class College {
     private boolean active = true;
 
     protected College() {
+    }
+
+    public College(
+            String name,
+            String code,
+            String emailDomain,
+            String city,
+            String state,
+            String country,
+            String description,
+            CollegeStatus status
+    ) {
+        this.name = name;
+        this.code = code;
+        this.emailDomain = emailDomain;
+        this.city = city;
+        this.state = state;
+        this.country = country;
+        this.description = description;
+        changeStatus(status);
     }
 
     public Long getId() {
@@ -69,6 +95,14 @@ public class College {
         return state;
     }
 
+    public String getCountry() {
+        return country;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
     public String getLogoUrl() {
         return logoUrl;
     }
@@ -83,5 +117,30 @@ public class College {
 
     public boolean isExplorable() {
         return active && status == CollegeStatus.ACTIVE;
+    }
+
+    public void update(
+            String name,
+            String code,
+            String emailDomain,
+            String city,
+            String state,
+            String country,
+            String description,
+            CollegeStatus status
+    ) {
+        this.name = name;
+        this.code = code;
+        this.emailDomain = emailDomain;
+        this.city = city;
+        this.state = state;
+        this.country = country;
+        this.description = description;
+        changeStatus(status);
+    }
+
+    public void changeStatus(CollegeStatus status) {
+        this.status = status;
+        this.active = status == CollegeStatus.ACTIVE;
     }
 }

@@ -70,11 +70,19 @@ class LocalDemoDataSeederIntegrationTest {
         assertTrue(admin.isEmailVerified());
         assertTrue(admin.isPhoneVerified());
         assertTrue(passwordEncoder.matches(TEST_PASSWORD, admin.getPasswordHash()));
+        User superAdmin = userRepository.findByEmailIgnoreCase(
+                "super.admin@campushub.local"
+        ).orElseThrow();
+        assertEquals(AccountStatus.ACTIVE, superAdmin.getStatus());
+        assertEquals(UserRole.SUPER_ADMIN, superAdmin.getRole());
+        assertTrue(superAdmin.isEmailVerified());
+        assertTrue(superAdmin.isPhoneVerified());
+        assertTrue(passwordEncoder.matches(TEST_PASSWORD, superAdmin.getPasswordHash()));
         User crossCollegeSeller = userRepository.findByEmailIgnoreCase(
                 "demo.mira@iitb.ac.in"
         ).orElseThrow();
         assertEquals(2L, crossCollegeSeller.getCollege().getId());
-        assertEquals(8, userRepository.count());
+        assertEquals(9, userRepository.count());
         assertEquals(18, listingRepository.count());
         assertEquals(16, listingRepository.findAll().stream()
                 .filter(listing -> listing.getStatus() == ListingStatus.ACTIVE)
@@ -82,7 +90,7 @@ class LocalDemoDataSeederIntegrationTest {
 
         seeder.run(null);
 
-        assertEquals(8, userRepository.count());
+        assertEquals(9, userRepository.count());
         assertEquals(18, listingRepository.count());
     }
 }

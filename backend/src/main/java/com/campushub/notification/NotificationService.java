@@ -71,7 +71,7 @@ public class NotificationService {
             Integer requestedSize,
             String sortBy
     ) {
-        User user = loadActiveStudent(authenticatedUserId);
+        User user = loadActiveUser(authenticatedUserId);
         int page = requestedPage == null ? 0 : requestedPage;
         int size = requestedSize == null ? DEFAULT_PAGE_SIZE : requestedSize;
         validatePage(page, size);
@@ -105,7 +105,7 @@ public class NotificationService {
             Long authenticatedUserId,
             Integer requestedSize
     ) {
-        User user = loadActiveStudent(authenticatedUserId);
+        User user = loadActiveUser(authenticatedUserId);
         int size = requestedSize == null ? 5 : requestedSize;
         if (size < 1 || size > 5) {
             throw new BadRequestException("Notification preview size must be between 1 and 5.");
@@ -129,7 +129,7 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public NotificationUnreadCountResponse getUnreadCount(Long authenticatedUserId) {
-        User user = loadActiveStudent(authenticatedUserId);
+        User user = loadActiveUser(authenticatedUserId);
         return new NotificationUnreadCountResponse(
                 notificationRepository.countByUserIdAndReadFalse(user.getId())
         );
@@ -140,7 +140,7 @@ public class NotificationService {
             Long authenticatedUserId,
             Long notificationId
     ) {
-        User user = loadActiveStudent(authenticatedUserId);
+        User user = loadActiveUser(authenticatedUserId);
         Notification notification = notificationRepository
                 .findByIdAndUserId(notificationId, user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -158,7 +158,7 @@ public class NotificationService {
 
     @Transactional
     public NotificationsMarkedReadResponse markAllRead(Long authenticatedUserId) {
-        User user = loadActiveStudent(authenticatedUserId);
+        User user = loadActiveUser(authenticatedUserId);
         Instant markedAt = Instant.now();
         int updated = notificationRepository.markAllRead(user.getId(), markedAt);
         return new NotificationsMarkedReadResponse(updated, 0, markedAt);
@@ -304,15 +304,17 @@ public class NotificationService {
         }
     }
 
-    private User loadActiveStudent(Long userId) {
+    private User loadActiveUser(Long userId) {
         User user = userRepository.findDashboardUserById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Student account was not found."
+                        "Campus Hub account was not found."
                 ));
-        if (user.getRole() != UserRole.STUDENT
+        if ((user.getRole() != UserRole.STUDENT
+                && user.getRole() != UserRole.ADMIN
+                && user.getRole() != UserRole.SUPER_ADMIN)
                 || user.getStatus() != AccountStatus.ACTIVE) {
             throw new ForbiddenException(
-                    "An active student account is required to access notifications."
+                    "An active account is required to access notifications."
             );
         }
         return user;
@@ -357,6 +359,9 @@ public class NotificationService {
                 || value.equals("/student/wishlist")
                 || value.equals("/student/my-marketplace")
                 || value.equals("/student/reports")
+                || value.matches("^/student/chats/\\d+$")
+                || value.matches("^/student/support/\\d+$")
+                || value.matches("^/admin/support/\\d+$")
                 || value.equals("/student/notifications")) {
             return value;
         }

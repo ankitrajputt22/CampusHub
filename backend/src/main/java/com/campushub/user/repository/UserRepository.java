@@ -27,8 +27,15 @@ public interface UserRepository
 
     long countByStatus(AccountStatus status);
 
+    long countByRole(UserRole role);
+
+    long countByRoleAndStatus(UserRole role, AccountStatus status);
+
     @EntityGraph(attributePaths = {"college", "trustScore"})
     List<User> findTop5ByRoleOrderByCreatedAtDesc(UserRole role);
+
+    @EntityGraph(attributePaths = "college")
+    List<User> findAllByRoleIn(List<UserRole> roles);
 
     @Override
     @EntityGraph(attributePaths = {"college", "trustScore"})
@@ -47,4 +54,8 @@ public interface UserRepository
     @EntityGraph(attributePaths = {"college", "trustScore"})
     @Query("select user from User user where user.id = :id")
     Optional<User> findAdminUserById(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"college", "trustScore"})
+    @Query("select user from User user where user.id = :id")
+    Optional<User> findChatUserById(@Param("id") Long id);
 }

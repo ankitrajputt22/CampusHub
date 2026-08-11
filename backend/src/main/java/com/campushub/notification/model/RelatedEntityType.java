@@ -6,6 +6,8 @@ public enum RelatedEntityType {
     LISTING,
     REVIEW,
     REPORT,
+    CHAT,
+    SUPPORT,
     USER,
     PROFILE,
     TRUST_SCORE,

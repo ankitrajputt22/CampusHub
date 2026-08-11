@@ -24,9 +24,13 @@ public interface ListingRepository
 
     long countBySellerIdAndStatusNot(Long sellerId, ListingStatus status);
 
+    long countBySellerIdAndStatusIn(Long sellerId, java.util.Collection<ListingStatus> statuses);
+
     long countByStatus(ListingStatus status);
 
     List<Listing> findAllBySellerIdAndStatus(Long sellerId, ListingStatus status);
+
+    List<Listing> findAllBySellerId(Long sellerId);
 
     @EntityGraph(attributePaths = {"seller", "college"})
     List<Listing> findTop5ByOrderByCreatedAtDesc();
@@ -73,6 +77,12 @@ public interface ListingRepository
     @EntityGraph(attributePaths = {"seller", "college"})
     @Query("select listing from Listing listing where listing.id = :listingId")
     Optional<Listing> findMarketplaceListingById(@Param("listingId") Long listingId);
+
+    @EntityGraph(attributePaths = {
+            "seller", "seller.college", "seller.trustScore", "college"
+    })
+    @Query("select listing from Listing listing where listing.id = :listingId")
+    Optional<Listing> findChatListingById(@Param("listingId") Long listingId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @EntityGraph(attributePaths = {"seller", "college"})

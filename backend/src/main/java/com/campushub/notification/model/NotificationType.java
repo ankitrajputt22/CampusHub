@@ -8,6 +8,8 @@ public enum NotificationType {
     WISHLIST,
     REVIEW,
     REPORT,
+    CHAT,
+    SUPPORT,
     SECURITY,
     SYSTEM,
     ADMIN

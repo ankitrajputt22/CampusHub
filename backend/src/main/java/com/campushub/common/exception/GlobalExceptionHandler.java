@@ -109,7 +109,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(ApiResponse.failure(
-                        "The upload is too large. Each image must be less than 2 MB.",
+                        "The upload exceeds the allowed request size.",
                         null
                 ));
     }

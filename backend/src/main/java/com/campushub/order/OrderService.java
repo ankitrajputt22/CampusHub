@@ -33,6 +33,7 @@ import com.campushub.user.model.UserRole;
 import com.campushub.user.repository.UserRepository;
 import com.campushub.user.trustscore.TrustScore;
 import com.campushub.user.trustscore.TrustScoreRepository;
+import com.campushub.user.trustscore.TrustScoreService;
 import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -63,6 +64,7 @@ public class OrderService {
     private final OrderStatusHistoryRepository historyRepository;
     private final NotificationService notificationService;
     private final TrustScoreRepository trustScoreRepository;
+    private final TrustScoreService trustScoreService;
 
     public OrderService(
             UserRepository userRepository,
@@ -70,7 +72,8 @@ public class OrderService {
             MarketplaceOrderRepository orderRepository,
             OrderStatusHistoryRepository historyRepository,
             NotificationService notificationService,
-            TrustScoreRepository trustScoreRepository
+            TrustScoreRepository trustScoreRepository,
+            TrustScoreService trustScoreService
     ) {
         this.userRepository = userRepository;
         this.listingRepository = listingRepository;
@@ -78,6 +81,7 @@ public class OrderService {
         this.historyRepository = historyRepository;
         this.notificationService = notificationService;
         this.trustScoreRepository = trustScoreRepository;
+        this.trustScoreService = trustScoreService;
     }
 
     @Transactional
@@ -380,6 +384,12 @@ public class OrderService {
                 RelatedEntityType.ORDER,
                 order.getId(),
                 "/student/reviews"
+        );
+        trustScoreService.recalculateAndSave(
+                buyer.getId(), "ORDER", order.getId(), "Order completed", true
+        );
+        trustScoreService.recalculateAndSave(
+                order.getSeller().getId(), "ORDER", order.getId(), "Order completed", true
         );
         return actionResponse(order, "Pickup confirmed and the order is complete.");
     }

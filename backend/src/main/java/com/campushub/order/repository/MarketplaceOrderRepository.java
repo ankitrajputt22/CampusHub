@@ -27,6 +27,10 @@ public interface MarketplaceOrderRepository
 
     long countBySellerId(Long sellerId);
 
+    long countByBuyerIdAndStatusIn(Long buyerId, java.util.Collection<OrderStatus> statuses);
+
+    long countBySellerIdAndStatusIn(Long sellerId, java.util.Collection<OrderStatus> statuses);
+
     long countByStatus(OrderStatus status);
 
     long countByListingId(Long listingId);
@@ -43,6 +47,13 @@ public interface MarketplaceOrderRepository
     @EntityGraph(attributePaths = {"listing", "listing.college", "buyer", "seller"})
     @Query("select orders from MarketplaceOrder orders where orders.id = :orderId")
     Optional<MarketplaceOrder> findOrderDetailsById(@Param("orderId") Long orderId);
+
+    @EntityGraph(attributePaths = {
+            "listing", "listing.college", "buyer", "buyer.college", "buyer.trustScore",
+            "seller", "seller.college", "seller.trustScore"
+    })
+    @Query("select orders from MarketplaceOrder orders where orders.id = :orderId")
+    Optional<MarketplaceOrder> findChatOrderById(@Param("orderId") Long orderId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @EntityGraph(attributePaths = {"listing", "listing.college", "buyer", "seller"})
