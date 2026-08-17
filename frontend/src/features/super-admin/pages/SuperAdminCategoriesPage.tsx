@@ -63,16 +63,25 @@ export function SuperAdminCategoriesPage() {
   }
 
   async function toggle(category: CategoryItem) {
-    const confirmed = window.confirm(`${category.status === 'ACTIVE' ? 'Disable' : 'Enable'} ${category.name}?`);
+    const confirmed = window.confirm(
+      `${category.status === 'ACTIVE' ? 'Disable' : 'Enable'} ${category.name}?`,
+    );
     if (!confirmed) return;
-    if (category.status === 'ACTIVE') await disableSuperAdminCategory(category.id);
+    if (category.status === 'ACTIVE')
+      await disableSuperAdminCategory(category.id);
     else await enableSuperAdminCategory(category.id);
     setMessage('Category updated successfully.');
     await load();
   }
 
   if (loading) return <LoadingState label="Loading categories..." />;
-  if (error) return <ErrorState onRetry={() => void load()} title="Unable to load categories." />;
+  if (error)
+    return (
+      <ErrorState
+        onRetry={() => void load()}
+        title="Unable to load categories."
+      />
+    );
 
   return (
     <>
@@ -99,14 +108,24 @@ export function SuperAdminCategoriesPage() {
                   {categories.map((category) => (
                     <tr key={category.id}>
                       <td className="py-3">
-                        <p className="font-black text-[#0f2747]">{category.name}</p>
-                        <p className="text-xs text-[#64748b]">{category.description ?? 'No description'}</p>
+                        <p className="font-black text-[#0f2747]">
+                          {category.name}
+                        </p>
+                        <p className="text-xs text-[#64748b]">
+                          {category.description ?? 'No description'}
+                        </p>
                       </td>
                       <td>{category.slug}</td>
                       <td>{category.sortOrder}</td>
-                      <td><StatusPill value={category.status} /></td>
                       <td>
-                        <button className="rounded-lg border border-[#d7dfeb] px-3 py-2 text-xs font-black" onClick={() => void toggle(category)} type="button">
+                        <StatusPill value={category.status} />
+                      </td>
+                      <td>
+                        <button
+                          className="rounded-lg border border-[#d7dfeb] px-3 py-2 text-xs font-black"
+                          onClick={() => void toggle(category)}
+                          type="button"
+                        >
                           {category.status === 'ACTIVE' ? 'Disable' : 'Enable'}
                         </button>
                       </td>
@@ -120,24 +139,48 @@ export function SuperAdminCategoriesPage() {
           )}
         </Panel>
         <Panel title="Add Category">
-          <form className="space-y-3" onSubmit={(event) => void createCategory(event)}>
-            <CategoryField label="Name" value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
-            <CategoryField label="Slug Optional" required={false} value={form.slug ?? ''} onChange={(value) => setForm({ ...form, slug: value })} />
-            <CategoryField label="Description Optional" required={false} value={form.description ?? ''} onChange={(value) => setForm({ ...form, description: value })} />
+          <form
+            className="space-y-3"
+            onSubmit={(event) => void createCategory(event)}
+          >
+            <CategoryField
+              label="Name"
+              value={form.name}
+              onChange={(value) => setForm({ ...form, name: value })}
+            />
+            <CategoryField
+              label="Slug Optional"
+              required={false}
+              value={form.slug ?? ''}
+              onChange={(value) => setForm({ ...form, slug: value })}
+            />
+            <CategoryField
+              label="Description Optional"
+              required={false}
+              value={form.description ?? ''}
+              onChange={(value) => setForm({ ...form, description: value })}
+            />
             <label className="block text-sm font-bold text-[#1e2f46]">
               Sort Order
               <input
                 className="mt-1 h-11 w-full rounded-xl border border-[#d7dfeb] px-3 outline-none focus:border-rose-600"
                 min={0}
-                onChange={(event) => setForm({ ...form, sortOrder: Number(event.target.value) })}
+                onChange={(event) =>
+                  setForm({ ...form, sortOrder: Number(event.target.value) })
+                }
                 type="number"
                 value={form.sortOrder}
               />
             </label>
-            <button className="h-11 w-full rounded-xl bg-[#111827] text-sm font-black text-white" type="submit">
+            <button
+              className="h-11 w-full rounded-xl bg-[#111827] text-sm font-black text-white"
+              type="submit"
+            >
               Add Category
             </button>
-            {message && <p className="text-sm font-bold text-[#475569]">{message}</p>}
+            {message && (
+              <p className="text-sm font-bold text-[#475569]">{message}</p>
+            )}
           </form>
         </Panel>
       </div>

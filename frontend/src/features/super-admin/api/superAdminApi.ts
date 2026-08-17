@@ -147,11 +147,17 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>) {
 }
 
 export function getSuperAdminDashboard() {
-  return unwrap(apiClient.get<ApiEnvelope<SuperAdminDashboard>>('/super-admin/dashboard'));
+  return unwrap(
+    apiClient.get<ApiEnvelope<SuperAdminDashboard>>('/super-admin/dashboard'),
+  );
 }
 
 export function getSuperAdminAdmins(params?: Record<string, string | number>) {
-  return unwrap(apiClient.get<ApiEnvelope<PageResponse<AdminItem>>>('/super-admin/admins', { params }));
+  return unwrap(
+    apiClient.get<ApiEnvelope<PageResponse<AdminItem>>>('/super-admin/admins', {
+      params,
+    }),
+  );
 }
 
 export function createSuperAdminAdmin(payload: {
@@ -159,51 +165,100 @@ export function createSuperAdminAdmin(payload: {
   email: string;
   username: string;
 }) {
-  return unwrap(apiClient.post<ApiEnvelope<AdminItem>>('/super-admin/admins', payload));
+  return unwrap(
+    apiClient.post<ApiEnvelope<AdminItem>>('/super-admin/admins', payload),
+  );
 }
 
 export function getSuperAdminAdmin(adminId: string | number) {
-  return unwrap(apiClient.get<ApiEnvelope<AdminDetails>>(`/super-admin/admins/${adminId}`));
+  return unwrap(
+    apiClient.get<ApiEnvelope<AdminDetails>>(`/super-admin/admins/${adminId}`),
+  );
 }
 
 export function suspendSuperAdminAdmin(adminId: string | number) {
-  return unwrap(apiClient.patch<ApiEnvelope<AdminItem>>(`/super-admin/admins/${adminId}/suspend`));
+  return unwrap(
+    apiClient.patch<ApiEnvelope<AdminItem>>(
+      `/super-admin/admins/${adminId}/suspend`,
+    ),
+  );
 }
 
 export function reactivateSuperAdminAdmin(adminId: string | number) {
-  return unwrap(apiClient.patch<ApiEnvelope<AdminItem>>(`/super-admin/admins/${adminId}/reactivate`));
+  return unwrap(
+    apiClient.patch<ApiEnvelope<AdminItem>>(
+      `/super-admin/admins/${adminId}/reactivate`,
+    ),
+  );
 }
 
 export function removeSuperAdminAdminRole(adminId: string | number) {
-  return unwrap(apiClient.patch<ApiEnvelope<AdminItem>>(`/super-admin/admins/${adminId}/remove-admin-role`));
+  return unwrap(
+    apiClient.patch<ApiEnvelope<AdminItem>>(
+      `/super-admin/admins/${adminId}/remove-admin-role`,
+    ),
+  );
 }
 
-export function getSuperAdminColleges(params?: Record<string, string | number>) {
-  return unwrap(apiClient.get<ApiEnvelope<PageResponse<CollegeItem>>>('/super-admin/colleges', { params }));
+export function getSuperAdminColleges(
+  params?: Record<string, string | number>,
+) {
+  return unwrap(
+    apiClient.get<ApiEnvelope<PageResponse<CollegeItem>>>(
+      '/super-admin/colleges',
+      { params },
+    ),
+  );
 }
 
 export function createSuperAdminCollege(payload: CollegePayload) {
-  return unwrap(apiClient.post<ApiEnvelope<CollegeItem>>('/super-admin/colleges', payload));
+  return unwrap(
+    apiClient.post<ApiEnvelope<CollegeItem>>('/super-admin/colleges', payload),
+  );
 }
 
-export function updateSuperAdminCollege(collegeId: string | number, payload: CollegePayload) {
-  return unwrap(apiClient.put<ApiEnvelope<CollegeItem>>(`/super-admin/colleges/${collegeId}`, payload));
+export function updateSuperAdminCollege(
+  collegeId: string | number,
+  payload: CollegePayload,
+) {
+  return unwrap(
+    apiClient.put<ApiEnvelope<CollegeItem>>(
+      `/super-admin/colleges/${collegeId}`,
+      payload,
+    ),
+  );
 }
 
 export function getSuperAdminCollege(collegeId: string | number) {
-  return unwrap(apiClient.get<ApiEnvelope<CollegeDetails>>(`/super-admin/colleges/${collegeId}`));
+  return unwrap(
+    apiClient.get<ApiEnvelope<CollegeDetails>>(
+      `/super-admin/colleges/${collegeId}`,
+    ),
+  );
 }
 
 export function activateSuperAdminCollege(collegeId: string | number) {
-  return unwrap(apiClient.patch<ApiEnvelope<CollegeItem>>(`/super-admin/colleges/${collegeId}/activate`));
+  return unwrap(
+    apiClient.patch<ApiEnvelope<CollegeItem>>(
+      `/super-admin/colleges/${collegeId}/activate`,
+    ),
+  );
 }
 
 export function deactivateSuperAdminCollege(collegeId: string | number) {
-  return unwrap(apiClient.patch<ApiEnvelope<CollegeItem>>(`/super-admin/colleges/${collegeId}/deactivate`));
+  return unwrap(
+    apiClient.patch<ApiEnvelope<CollegeItem>>(
+      `/super-admin/colleges/${collegeId}/deactivate`,
+    ),
+  );
 }
 
 export function blockSuperAdminCollege(collegeId: string | number) {
-  return unwrap(apiClient.patch<ApiEnvelope<CollegeItem>>(`/super-admin/colleges/${collegeId}/block`));
+  return unwrap(
+    apiClient.patch<ApiEnvelope<CollegeItem>>(
+      `/super-admin/colleges/${collegeId}/block`,
+    ),
+  );
 }
 
 export type CollegePayload = {
@@ -217,24 +272,52 @@ export type CollegePayload = {
   status: string;
 };
 
-export function getSuperAdminCategories(params?: Record<string, string | number>) {
-  return unwrap(apiClient.get<ApiEnvelope<PageResponse<CategoryItem>>>('/super-admin/categories', { params }));
+export function getSuperAdminCategories(
+  params?: Record<string, string | number>,
+) {
+  return unwrap(
+    apiClient.get<ApiEnvelope<PageResponse<CategoryItem>>>(
+      '/super-admin/categories',
+      { params },
+    ),
+  );
 }
 
 export function createSuperAdminCategory(payload: CategoryPayload) {
-  return unwrap(apiClient.post<ApiEnvelope<CategoryItem>>('/super-admin/categories', payload));
+  return unwrap(
+    apiClient.post<ApiEnvelope<CategoryItem>>(
+      '/super-admin/categories',
+      payload,
+    ),
+  );
 }
 
-export function updateSuperAdminCategory(categoryId: string | number, payload: CategoryPayload) {
-  return unwrap(apiClient.put<ApiEnvelope<CategoryItem>>(`/super-admin/categories/${categoryId}`, payload));
+export function updateSuperAdminCategory(
+  categoryId: string | number,
+  payload: CategoryPayload,
+) {
+  return unwrap(
+    apiClient.put<ApiEnvelope<CategoryItem>>(
+      `/super-admin/categories/${categoryId}`,
+      payload,
+    ),
+  );
 }
 
 export function enableSuperAdminCategory(categoryId: string | number) {
-  return unwrap(apiClient.patch<ApiEnvelope<CategoryItem>>(`/super-admin/categories/${categoryId}/enable`));
+  return unwrap(
+    apiClient.patch<ApiEnvelope<CategoryItem>>(
+      `/super-admin/categories/${categoryId}/enable`,
+    ),
+  );
 }
 
 export function disableSuperAdminCategory(categoryId: string | number) {
-  return unwrap(apiClient.patch<ApiEnvelope<CategoryItem>>(`/super-admin/categories/${categoryId}/disable`));
+  return unwrap(
+    apiClient.patch<ApiEnvelope<CategoryItem>>(
+      `/super-admin/categories/${categoryId}/disable`,
+    ),
+  );
 }
 
 export type CategoryPayload = {
@@ -246,18 +329,38 @@ export type CategoryPayload = {
   sortOrder: number;
 };
 
-export function getSuperAdminAuditLogs(params?: Record<string, string | number>) {
-  return unwrap(apiClient.get<ApiEnvelope<PageResponse<AuditLogItem>>>('/super-admin/audit-logs', { params }));
+export function getSuperAdminAuditLogs(
+  params?: Record<string, string | number>,
+) {
+  return unwrap(
+    apiClient.get<ApiEnvelope<PageResponse<AuditLogItem>>>(
+      '/super-admin/audit-logs',
+      { params },
+    ),
+  );
 }
 
 export function getSuperAdminPlatformSettings() {
-  return unwrap(apiClient.get<ApiEnvelope<{ settings: PlatformSetting[] }>>('/super-admin/platform-settings'));
+  return unwrap(
+    apiClient.get<ApiEnvelope<{ settings: PlatformSetting[] }>>(
+      '/super-admin/platform-settings',
+    ),
+  );
 }
 
-export function updateSuperAdminPlatformSettings(settings: Record<string, string>) {
-  return unwrap(apiClient.put<ApiEnvelope<{ settings: PlatformSetting[] }>>('/super-admin/platform-settings', { settings }));
+export function updateSuperAdminPlatformSettings(
+  settings: Record<string, string>,
+) {
+  return unwrap(
+    apiClient.put<ApiEnvelope<{ settings: PlatformSetting[] }>>(
+      '/super-admin/platform-settings',
+      { settings },
+    ),
+  );
 }
 
 export function getSuperAdminSystemHealth() {
-  return unwrap(apiClient.get<ApiEnvelope<SystemHealth>>('/super-admin/system-health'));
+  return unwrap(
+    apiClient.get<ApiEnvelope<SystemHealth>>('/super-admin/system-health'),
+  );
 }

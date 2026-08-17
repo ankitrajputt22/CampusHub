@@ -27,7 +27,11 @@ export function SuperAdminPlatformSettingsPage() {
     try {
       const response = await getSuperAdminPlatformSettings();
       setSettings(response.settings);
-      setDraft(Object.fromEntries(response.settings.map((item) => [item.key, item.value])));
+      setDraft(
+        Object.fromEntries(
+          response.settings.map((item) => [item.key, item.value]),
+        ),
+      );
     } catch {
       setError(true);
     } finally {
@@ -60,7 +64,11 @@ export function SuperAdminPlatformSettingsPage() {
     try {
       const response = await updateSuperAdminPlatformSettings(changed);
       setSettings(response.settings);
-      setDraft(Object.fromEntries(response.settings.map((item) => [item.key, item.value])));
+      setDraft(
+        Object.fromEntries(
+          response.settings.map((item) => [item.key, item.value]),
+        ),
+      );
       setMessage('Platform settings updated successfully.');
     } catch {
       setMessage('Unable to update platform settings.');
@@ -70,7 +78,13 @@ export function SuperAdminPlatformSettingsPage() {
   }
 
   if (loading) return <LoadingState label="Loading platform settings..." />;
-  if (error) return <ErrorState onRetry={() => void load()} title="Unable to load platform settings." />;
+  if (error)
+    return (
+      <ErrorState
+        onRetry={() => void load()}
+        title="Unable to load platform settings."
+      />
+    );
 
   return (
     <>
@@ -83,9 +97,14 @@ export function SuperAdminPlatformSettingsPage() {
         <form className="space-y-4" onSubmit={(event) => void save(event)}>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {settings.map((setting) => (
-              <label className="rounded-xl border border-[#edf1f7] p-4" key={setting.key}>
+              <label
+                className="rounded-xl border border-[#edf1f7] p-4"
+                key={setting.key}
+              >
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <span className="text-sm font-black text-[#09172d]">{labelFor(setting.key)}</span>
+                  <span className="text-sm font-black text-[#09172d]">
+                    {labelFor(setting.key)}
+                  </span>
                   <StatusPill value={setting.type} />
                 </div>
                 <p className="mb-3 min-h-10 text-xs font-medium text-[#64748b]">
@@ -94,7 +113,9 @@ export function SuperAdminPlatformSettingsPage() {
                 {setting.type === 'BOOLEAN' ? (
                   <select
                     className="h-11 w-full rounded-xl border border-[#d7dfeb] px-3 text-sm font-bold outline-none focus:border-rose-600"
-                    onChange={(event) => setDraft({ ...draft, [setting.key]: event.target.value })}
+                    onChange={(event) =>
+                      setDraft({ ...draft, [setting.key]: event.target.value })
+                    }
                     value={draft[setting.key] ?? setting.value}
                   >
                     <option value="true">Enabled</option>
@@ -103,7 +124,9 @@ export function SuperAdminPlatformSettingsPage() {
                 ) : (
                   <input
                     className="h-11 w-full rounded-xl border border-[#d7dfeb] px-3 text-sm font-bold outline-none focus:border-rose-600"
-                    onChange={(event) => setDraft({ ...draft, [setting.key]: event.target.value })}
+                    onChange={(event) =>
+                      setDraft({ ...draft, [setting.key]: event.target.value })
+                    }
                     type={setting.type === 'NUMBER' ? 'number' : 'text'}
                     value={draft[setting.key] ?? setting.value}
                   />
@@ -119,7 +142,9 @@ export function SuperAdminPlatformSettingsPage() {
             >
               {saving ? 'Saving platform settings...' : 'Save Settings'}
             </button>
-            {message && <p className="text-sm font-bold text-[#475569]">{message}</p>}
+            {message && (
+              <p className="text-sm font-bold text-[#475569]">{message}</p>
+            )}
           </div>
         </form>
       </Panel>

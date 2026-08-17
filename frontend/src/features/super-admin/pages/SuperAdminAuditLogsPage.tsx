@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   getSuperAdminAuditLogs,
@@ -19,37 +19,58 @@ export function SuperAdminAuditLogsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  async function load() {
+  const load = useCallback(async (searchTerm = '') => {
     setLoading(true);
     setError(false);
     try {
-      setLogs((await getSuperAdminAuditLogs(search ? { search } : undefined)).items);
+      setLogs(
+        (
+          await getSuperAdminAuditLogs(
+            searchTerm ? { search: searchTerm } : undefined,
+          )
+        ).items,
+      );
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   if (loading) return <LoadingState label="Loading audit logs..." />;
-  if (error) return <ErrorState onRetry={() => void load()} title="Unable to load audit logs." />;
+  if (error)
+    return (
+      <ErrorState
+        onRetry={() => void load(search)}
+        title="Unable to load audit logs."
+      />
+    );
 
   return (
     <>
       <PageHeader
         action={
-          <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); void load(); }}>
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void load(search);
+            }}
+          >
             <input
               className="h-11 rounded-xl border border-[#d7dfeb] px-4 text-sm font-semibold outline-none focus:border-rose-600"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search audit logs"
               value={search}
             />
-            <button className="rounded-xl bg-[#111827] px-4 text-sm font-black text-white" type="submit">
+            <button
+              className="rounded-xl bg-[#111827] px-4 text-sm font-black text-white"
+              type="submit"
+            >
               Search
             </button>
           </form>
@@ -75,12 +96,16 @@ export function SuperAdminAuditLogsPage() {
               <tbody className="divide-y divide-[#edf1f7]">
                 {logs.map((log) => (
                   <tr key={log.id}>
-                    <td className="py-3 font-black text-[#0f2747]">{log.actionType}</td>
+                    <td className="py-3 font-black text-[#0f2747]">
+                      {log.actionType}
+                    </td>
                     <td>
                       <p className="font-bold">{log.actorName}</p>
                       <StatusPill value={log.actorRole} />
                     </td>
-                    <td>{log.targetType} #{log.targetId ?? 'platform'}</td>
+                    <td>
+                      {log.targetType} #{log.targetId ?? 'platform'}
+                    </td>
                     <td>{log.oldValue ?? '-'}</td>
                     <td>{log.newValue ?? '-'}</td>
                     <td>{new Date(log.createdAt).toLocaleString()}</td>

@@ -36,16 +36,15 @@ export type TrustScoreHistoryEntry = {
 };
 
 export async function getOwnTrustScore() {
-  const response = await apiClient.get<ApiResponse<TrustScoreDetails>>(
-    '/user/trust-score',
-  );
+  const response =
+    await apiClient.get<ApiResponse<TrustScoreDetails>>('/user/trust-score');
   return response.data.data;
 }
 
 export async function getOwnTrustScoreHistory() {
-  const response = await apiClient.get<ApiResponse<{ entries: TrustScoreHistoryEntry[] }>>(
-    '/user/trust-score/history',
-  );
+  const response = await apiClient.get<
+    ApiResponse<{ entries: TrustScoreHistoryEntry[] }>
+  >('/user/trust-score/history');
   return response.data.data.entries;
 }
 

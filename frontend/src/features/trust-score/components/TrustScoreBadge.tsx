@@ -16,7 +16,10 @@ export function TrustScoreBadge({
       aria-label={`Campus Trust Score ${safeScore} out of 100`}
       className={`inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 font-bold text-emerald-800 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1.5 text-xs'}`}
     >
-      <ShieldCheck aria-hidden="true" className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+      <ShieldCheck
+        aria-hidden="true"
+        className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+      />
       {safeScore}/100{compact ? '' : ` · ${label}`}
     </span>
   );

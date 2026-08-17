@@ -39,7 +39,8 @@ export function StudentProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [trustScoreDetails, setTrustScoreDetails] = useState<TrustScoreDetails>();
+  const [trustScoreDetails, setTrustScoreDetails] =
+    useState<TrustScoreDetails>();
   const [trustScoreLoading, setTrustScoreLoading] = useState(false);
   const [trustScoreError, setTrustScoreError] = useState('');
   const navigate = useNavigate();

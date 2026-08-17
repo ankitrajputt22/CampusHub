@@ -38,7 +38,12 @@ export function SuperAdminDashboardPage() {
 
   if (loading) return <LoadingState label="Loading super admin dashboard..." />;
   if (error || !dashboard) {
-    return <ErrorState onRetry={() => void load()} title="Unable to load dashboard." />;
+    return (
+      <ErrorState
+        onRetry={() => void load()}
+        title="Unable to load dashboard."
+      />
+    );
   }
 
   const stats = dashboard.stats;
@@ -54,11 +59,26 @@ export function SuperAdminDashboardPage() {
         <StatCard label="Total Students" value={stats.totalStudents} />
         <StatCard label="Total Admins" value={stats.totalAdmins} />
         <StatCard label="Total Colleges" value={stats.totalColleges} />
-        <StatCard label="Active Listings" value={stats.activeListings} tone="success" />
+        <StatCard
+          label="Active Listings"
+          value={stats.activeListings}
+          tone="success"
+        />
         <StatCard label="Total Orders" value={stats.totalOrders} />
-        <StatCard label="Pending Reports" value={stats.pendingReports} tone="warning" />
-        <StatCard label="Open Support Tickets" value={stats.openSupportTickets} tone="warning" />
-        <StatCard label="Recent Admin Actions" value={stats.recentAdminActions} />
+        <StatCard
+          label="Pending Reports"
+          value={stats.pendingReports}
+          tone="warning"
+        />
+        <StatCard
+          label="Open Support Tickets"
+          value={stats.openSupportTickets}
+          tone="warning"
+        />
+        <StatCard
+          label="Recent Admin Actions"
+          value={stats.recentAdminActions}
+        />
       </div>
       <div className="mt-6 grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <Panel title="Recent Admin Actions">
@@ -70,9 +90,12 @@ export function SuperAdminDashboardPage() {
                   key={item.id}
                 >
                   <div>
-                    <p className="font-bold text-[#09172d]">{item.actionType}</p>
+                    <p className="font-bold text-[#09172d]">
+                      {item.actionType}
+                    </p>
                     <p className="text-xs font-medium text-[#64748b]">
-                      {item.actorName} on {item.targetType} #{item.targetId ?? 'platform'}
+                      {item.actorName} on {item.targetType} #
+                      {item.targetId ?? 'platform'}
                     </p>
                   </div>
                   <StatusPill value={item.actorRole} />
@@ -126,7 +149,10 @@ export function SuperAdminDashboardPage() {
           {dashboard.highPriorityReports.length > 0 ? (
             <div className="space-y-3">
               {dashboard.highPriorityReports.map((report) => (
-                <div className="rounded-xl border border-amber-100 bg-amber-50 p-3" key={report.id}>
+                <div
+                  className="rounded-xl border border-amber-100 bg-amber-50 p-3"
+                  key={report.id}
+                >
                   <p className="font-bold text-[#09172d]">{report.reason}</p>
                   <p className="text-xs font-medium text-[#64748b]">
                     {report.type} report by {report.reporterName}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
@@ -25,21 +25,27 @@ export function SuperAdminAdminsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  async function load() {
+  const load = useCallback(async (searchTerm = '') => {
     setLoading(true);
     setError(false);
     try {
-      setAdmins((await getSuperAdminAdmins(search ? { search } : undefined)).items);
+      setAdmins(
+        (
+          await getSuperAdminAdmins(
+            searchTerm ? { search: searchTerm } : undefined,
+          )
+        ).items,
+      );
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   async function createAdmin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,7 +54,7 @@ export function SuperAdminAdminsPage() {
       await createSuperAdminAdmin(form);
       setForm({ fullName: '', email: '', username: '' });
       setMessage('Admin created successfully.');
-      await load();
+      await load(search);
     } catch {
       setMessage('Unable to create admin.');
     }
@@ -68,24 +74,39 @@ export function SuperAdminAdminsPage() {
       await reactivateSuperAdminAdmin(admin.id);
       setMessage('Admin reactivated successfully.');
     }
-    await load();
+    await load(search);
   }
 
   if (loading) return <LoadingState label="Loading admins..." />;
-  if (error) return <ErrorState onRetry={() => void load()} title="Unable to load admins." />;
+  if (error)
+    return (
+      <ErrorState
+        onRetry={() => void load(search)}
+        title="Unable to load admins."
+      />
+    );
 
   return (
     <>
       <PageHeader
         action={
-          <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); void load(); }}>
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void load(search);
+            }}
+          >
             <input
               className="h-11 rounded-xl border border-[#d7dfeb] px-4 text-sm font-semibold outline-none focus:border-rose-600"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search admins"
               value={search}
             />
-            <button className="rounded-xl bg-[#111827] px-4 text-sm font-black text-white" type="submit">
+            <button
+              className="rounded-xl bg-[#111827] px-4 text-sm font-black text-white"
+              type="submit"
+            >
               Search
             </button>
           </form>
@@ -113,14 +134,21 @@ export function SuperAdminAdminsPage() {
                   {admins.map((admin) => (
                     <tr key={admin.id}>
                       <td className="py-3">
-                        <Link className="font-black text-[#0f2747]" to={`/super-admin/admins/${admin.id}`}>
+                        <Link
+                          className="font-black text-[#0f2747]"
+                          to={`/super-admin/admins/${admin.id}`}
+                        >
                           {admin.fullName}
                         </Link>
-                        <p className="text-xs text-[#64748b]">@{admin.username}</p>
+                        <p className="text-xs text-[#64748b]">
+                          @{admin.username}
+                        </p>
                       </td>
                       <td>{admin.email}</td>
                       <td>{admin.role.replace('_', ' ')}</td>
-                      <td><StatusPill value={admin.status} /></td>
+                      <td>
+                        <StatusPill value={admin.status} />
+                      </td>
                       <td>{admin.createdByName ?? 'System'}</td>
                       <td>
                         {admin.role !== 'SUPER_ADMIN' && (
@@ -129,7 +157,9 @@ export function SuperAdminAdminsPage() {
                             onClick={() => void toggle(admin)}
                             type="button"
                           >
-                            {admin.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
+                            {admin.status === 'ACTIVE'
+                              ? 'Suspend'
+                              : 'Reactivate'}
                           </button>
                         )}
                       </td>
@@ -143,14 +173,35 @@ export function SuperAdminAdminsPage() {
           )}
         </Panel>
         <Panel title="Create Admin">
-          <form className="space-y-3" onSubmit={(event) => void createAdmin(event)}>
-            <Field label="Full Name" value={form.fullName} onChange={(value) => setForm({ ...form, fullName: value })} />
-            <Field label="Email" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
-            <Field label="Username" value={form.username} onChange={(value) => setForm({ ...form, username: value })} />
-            <button className="h-11 w-full rounded-xl bg-[#111827] text-sm font-black text-white" type="submit">
+          <form
+            className="space-y-3"
+            onSubmit={(event) => void createAdmin(event)}
+          >
+            <Field
+              label="Full Name"
+              value={form.fullName}
+              onChange={(value) => setForm({ ...form, fullName: value })}
+            />
+            <Field
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={(value) => setForm({ ...form, email: value })}
+            />
+            <Field
+              label="Username"
+              value={form.username}
+              onChange={(value) => setForm({ ...form, username: value })}
+            />
+            <button
+              className="h-11 w-full rounded-xl bg-[#111827] text-sm font-black text-white"
+              type="submit"
+            >
               Create Admin
             </button>
-            {message && <p className="text-sm font-bold text-[#475569]">{message}</p>}
+            {message && (
+              <p className="text-sm font-bold text-[#475569]">{message}</p>
+            )}
           </form>
         </Panel>
       </div>

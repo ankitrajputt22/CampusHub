@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import {
@@ -22,7 +22,7 @@ export function SuperAdminAdminDetailsPage() {
   const [error, setError] = useState(false);
   const [message, setMessage] = useState('');
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!adminId) return;
     setLoading(true);
     setError(false);
@@ -33,17 +33,19 @@ export function SuperAdminAdminDetailsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [adminId]);
 
   useEffect(() => {
     void load();
-  }, [adminId]);
+  }, [load]);
 
   async function removeRole() {
     if (!adminId || details?.admin.role === 'SUPER_ADMIN') return;
     const currentDetails = details;
     if (!currentDetails) return;
-    const confirmed = window.confirm(`Remove admin role from ${currentDetails.admin.fullName}?`);
+    const confirmed = window.confirm(
+      `Remove admin role from ${currentDetails.admin.fullName}?`,
+    );
     if (!confirmed) return;
     await removeSuperAdminAdminRole(adminId);
     setMessage('Admin role removed successfully.');
@@ -52,14 +54,22 @@ export function SuperAdminAdminDetailsPage() {
 
   if (loading) return <LoadingState label="Loading admin details..." />;
   if (error || !details) {
-    return <ErrorState onRetry={() => void load()} title="Unable to load admin details." />;
+    return (
+      <ErrorState
+        onRetry={() => void load()}
+        title="Unable to load admin details."
+      />
+    );
   }
 
   return (
     <>
       <PageHeader
         action={
-          <Link className="rounded-xl border border-[#d7dfeb] px-4 py-3 text-sm font-black" to="/super-admin/admins">
+          <Link
+            className="rounded-xl border border-[#d7dfeb] px-4 py-3 text-sm font-black"
+            to="/super-admin/admins"
+          >
             Back to Admins
           </Link>
         }
@@ -74,11 +84,25 @@ export function SuperAdminAdminDetailsPage() {
             <Detail label="Username" value={details.admin.username} />
             <Detail label="Role" value={details.admin.role.replace('_', ' ')} />
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#64748b]">Status</p>
-              <div className="mt-1"><StatusPill value={details.admin.status} /></div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#64748b]">
+                Status
+              </p>
+              <div className="mt-1">
+                <StatusPill value={details.admin.status} />
+              </div>
             </div>
-            <Detail label="Created By" value={details.admin.createdByName ?? 'System'} />
-            <Detail label="Last Login" value={details.admin.lastLoginAt ? new Date(details.admin.lastLoginAt).toLocaleString() : 'Not recorded'} />
+            <Detail
+              label="Created By"
+              value={details.admin.createdByName ?? 'System'}
+            />
+            <Detail
+              label="Last Login"
+              value={
+                details.admin.lastLoginAt
+                  ? new Date(details.admin.lastLoginAt).toLocaleString()
+                  : 'Not recorded'
+              }
+            />
           </div>
           {details.admin.role !== 'SUPER_ADMIN' && (
             <button
@@ -89,16 +113,22 @@ export function SuperAdminAdminDetailsPage() {
               Remove Admin Role
             </button>
           )}
-          {message && <p className="mt-3 text-sm font-bold text-[#475569]">{message}</p>}
+          {message && (
+            <p className="mt-3 text-sm font-bold text-[#475569]">{message}</p>
+          )}
         </Panel>
         <Panel title="Recent Audit Logs">
           {details.recentAuditLogs.length > 0 ? (
             <div className="space-y-3">
               {details.recentAuditLogs.map((item) => (
-                <div className="rounded-xl border border-[#edf1f7] p-3" key={item.id}>
+                <div
+                  className="rounded-xl border border-[#edf1f7] p-3"
+                  key={item.id}
+                >
                   <p className="font-bold text-[#09172d]">{item.actionType}</p>
                   <p className="text-xs font-medium text-[#64748b]">
-                    {item.targetType} #{item.targetId ?? 'platform'} · {new Date(item.createdAt).toLocaleString()}
+                    {item.targetType} #{item.targetId ?? 'platform'} ·{' '}
+                    {new Date(item.createdAt).toLocaleString()}
                   </p>
                 </div>
               ))}
@@ -115,7 +145,9 @@ export function SuperAdminAdminDetailsPage() {
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-black uppercase tracking-[0.12em] text-[#64748b]">{label}</p>
+      <p className="text-xs font-black uppercase tracking-[0.12em] text-[#64748b]">
+        {label}
+      </p>
       <p className="mt-1 font-bold text-[#09172d]">{value}</p>
     </div>
   );

@@ -38,9 +38,17 @@ const links = [
   { label: 'Dashboard', to: '/super-admin/dashboard', icon: LayoutDashboard },
   { label: 'Manage Admins', to: '/super-admin/admins', icon: Users },
   { label: 'Manage Colleges', to: '/super-admin/colleges', icon: Building2 },
-  { label: 'Manage Categories', to: '/super-admin/categories', icon: FolderTree },
+  {
+    label: 'Manage Categories',
+    to: '/super-admin/categories',
+    icon: FolderTree,
+  },
   { label: 'Audit Logs', to: '/super-admin/audit-logs', icon: ScrollText },
-  { label: 'Platform Settings', to: '/super-admin/platform-settings', icon: Settings },
+  {
+    label: 'Platform Settings',
+    to: '/super-admin/platform-settings',
+    icon: Settings,
+  },
   { label: 'System Health', to: '/super-admin/system-health', icon: Activity },
 ] as const;
 

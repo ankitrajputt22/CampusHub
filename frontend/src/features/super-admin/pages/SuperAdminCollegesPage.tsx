@@ -65,17 +65,32 @@ export function SuperAdminCollegesPage() {
     }
   }
 
-  async function changeStatus(college: CollegeItem, action: 'inactive' | 'blocked') {
-    const confirmed = window.confirm(`${action === 'blocked' ? 'Block' : 'Mark inactive'} ${college.name}?`);
+  async function changeStatus(
+    college: CollegeItem,
+    action: 'inactive' | 'blocked',
+  ) {
+    const confirmed = window.confirm(
+      `${action === 'blocked' ? 'Block' : 'Mark inactive'} ${college.name}?`,
+    );
     if (!confirmed) return;
     if (action === 'blocked') await blockSuperAdminCollege(college.id);
     else await deactivateSuperAdminCollege(college.id);
-    setMessage(action === 'blocked' ? 'College blocked successfully.' : 'College updated successfully.');
+    setMessage(
+      action === 'blocked'
+        ? 'College blocked successfully.'
+        : 'College updated successfully.',
+    );
     await load();
   }
 
   if (loading) return <LoadingState label="Loading colleges..." />;
-  if (error) return <ErrorState onRetry={() => void load()} title="Unable to load colleges." />;
+  if (error)
+    return (
+      <ErrorState
+        onRetry={() => void load()}
+        title="Unable to load colleges."
+      />
+    );
 
   return (
     <>
@@ -104,21 +119,36 @@ export function SuperAdminCollegesPage() {
                   {colleges.map((college) => (
                     <tr key={college.id}>
                       <td className="py-3">
-                        <Link className="font-black text-[#0f2747]" to={`/super-admin/colleges/${college.id}`}>
+                        <Link
+                          className="font-black text-[#0f2747]"
+                          to={`/super-admin/colleges/${college.id}`}
+                        >
                           {college.name}
                         </Link>
                         <p className="text-xs text-[#64748b]">{college.code}</p>
                       </td>
-                      <td>{college.city}, {college.state}</td>
+                      <td>
+                        {college.city}, {college.state}
+                      </td>
                       <td>{college.emailDomain ?? 'Optional'}</td>
                       <td>{college.verifiedStudentsCount}</td>
                       <td>{college.activeListingsCount}</td>
-                      <td><StatusPill value={college.status} /></td>
+                      <td>
+                        <StatusPill value={college.status} />
+                      </td>
                       <td className="space-x-2">
-                        <button className="rounded-lg border border-[#d7dfeb] px-3 py-2 text-xs font-black" onClick={() => void changeStatus(college, 'inactive')} type="button">
+                        <button
+                          className="rounded-lg border border-[#d7dfeb] px-3 py-2 text-xs font-black"
+                          onClick={() => void changeStatus(college, 'inactive')}
+                          type="button"
+                        >
                           Inactive
                         </button>
-                        <button className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black text-rose-700" onClick={() => void changeStatus(college, 'blocked')} type="button">
+                        <button
+                          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black text-rose-700"
+                          onClick={() => void changeStatus(college, 'blocked')}
+                          type="button"
+                        >
                           Block
                         </button>
                       </td>
@@ -132,17 +162,52 @@ export function SuperAdminCollegesPage() {
           )}
         </Panel>
         <Panel title="Add College">
-          <form className="space-y-3" onSubmit={(event) => void createCollege(event)}>
-            <CollegeField label="College Name" value={form.collegeName} onChange={(value) => setForm({ ...form, collegeName: value })} />
-            <CollegeField label="College Code" value={form.collegeCode} onChange={(value) => setForm({ ...form, collegeCode: value.toUpperCase() })} />
-            <CollegeField label="Email Domain Optional" required={false} value={form.emailDomain ?? ''} onChange={(value) => setForm({ ...form, emailDomain: value })} />
-            <CollegeField label="City" value={form.city} onChange={(value) => setForm({ ...form, city: value })} />
-            <CollegeField label="State" value={form.state} onChange={(value) => setForm({ ...form, state: value })} />
-            <CollegeField label="Country" value={form.country} onChange={(value) => setForm({ ...form, country: value })} />
-            <button className="h-11 w-full rounded-xl bg-[#111827] text-sm font-black text-white" type="submit">
+          <form
+            className="space-y-3"
+            onSubmit={(event) => void createCollege(event)}
+          >
+            <CollegeField
+              label="College Name"
+              value={form.collegeName}
+              onChange={(value) => setForm({ ...form, collegeName: value })}
+            />
+            <CollegeField
+              label="College Code"
+              value={form.collegeCode}
+              onChange={(value) =>
+                setForm({ ...form, collegeCode: value.toUpperCase() })
+              }
+            />
+            <CollegeField
+              label="Email Domain Optional"
+              required={false}
+              value={form.emailDomain ?? ''}
+              onChange={(value) => setForm({ ...form, emailDomain: value })}
+            />
+            <CollegeField
+              label="City"
+              value={form.city}
+              onChange={(value) => setForm({ ...form, city: value })}
+            />
+            <CollegeField
+              label="State"
+              value={form.state}
+              onChange={(value) => setForm({ ...form, state: value })}
+            />
+            <CollegeField
+              label="Country"
+              value={form.country}
+              onChange={(value) => setForm({ ...form, country: value })}
+            />
+            <button
+              className="h-11 w-full rounded-xl bg-[#111827] text-sm font-black text-white"
+              type="submit"
+            >
               Add College
             </button>
-            {message && <p className="text-sm font-bold text-[#475569]">{message}</p>}
+            {message && (
+              <p className="text-sm font-bold text-[#475569]">{message}</p>
+            )}
           </form>
         </Panel>
       </div>

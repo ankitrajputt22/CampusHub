@@ -77,13 +77,16 @@ export function Panel({
 
 export function StatusPill({ value }: { value: string }) {
   const normalized = value.toUpperCase();
-  const className = normalized.includes('ACTIVE') || normalized === 'UP'
-    ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-    : normalized.includes('PENDING') || normalized.includes('OPEN')
-      ? 'bg-amber-50 text-amber-700 ring-amber-200'
-      : 'bg-rose-50 text-rose-700 ring-rose-200';
+  const className =
+    normalized.includes('ACTIVE') || normalized === 'UP'
+      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+      : normalized.includes('PENDING') || normalized.includes('OPEN')
+        ? 'bg-amber-50 text-amber-700 ring-amber-200'
+        : 'bg-rose-50 text-rose-700 ring-rose-200';
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1 ${className}`}>
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1 ${className}`}
+    >
       {value.replace(/_/g, ' ')}
     </span>
   );
