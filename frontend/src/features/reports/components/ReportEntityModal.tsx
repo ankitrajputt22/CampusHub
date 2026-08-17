@@ -1,5 +1,6 @@
 import { AlertTriangle, Flag, ShieldAlert, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import type {
   ReportReason,
@@ -163,6 +164,15 @@ export function ReportEntityModal({
             {description.length}/500
           </span>
         </label>
+
+        <p className="mt-3 text-xs leading-5 text-[#667386]">
+          Submit reports honestly and keep passwords, OTPs, payment credentials,
+          and unnecessary private information out of the report.{' '}
+          <Link className="font-black text-[#007b95]" to="/safety-guidelines">
+            Review the Safety Guidelines
+          </Link>
+          .
+        </p>
 
         {error && (
           <div

@@ -4,6 +4,7 @@ import {
   CreditCard,
   FileWarning,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Menu,
   PackageSearch,
@@ -42,6 +43,7 @@ const adminLinks = [
   { label: 'Orders', to: '/admin/orders', icon: ShoppingBag },
   { label: 'Payments', to: '/admin/payments', icon: CreditCard },
   { label: 'Audit Logs', to: '/admin/audit-logs', icon: ScrollText },
+  { label: 'Support Tickets', to: '/admin/support', icon: LifeBuoy },
 ] as const;
 
 export function AdminShell() {

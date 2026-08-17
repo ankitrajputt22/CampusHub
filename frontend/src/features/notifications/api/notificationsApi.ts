@@ -134,6 +134,7 @@ export function isAllowedNotificationAction(actionUrl: string | null) {
   if (!actionUrl) return false;
   return (
     /^\/student\/orders\/\d+$/.test(actionUrl) ||
+    /^\/student\/chats\/\d+$/.test(actionUrl) ||
     /^\/listing\/\d+$/.test(actionUrl) ||
     [
       '/student/reviews',

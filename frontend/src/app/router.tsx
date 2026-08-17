@@ -1,15 +1,12 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 
 import { authRoutes } from '../features/auth/routes/authRoutes';
-import {
-  AboutPage,
-  ContactSupportPage,
-  PrivacyPolicyPage,
-  PublicShell,
-  RefundPolicyPage,
-  SafetyGuidelinesPage,
-  TermsPage,
-} from '../features/legal/pages/PublicPages';
+import { AboutPage, PublicShell } from '../features/legal/pages/PublicPages';
+import { PrivacyPolicyPage } from '../features/legal/pages/PrivacyPolicyPage';
+import { RefundPolicyPage } from '../features/legal/pages/RefundPolicyPage';
+import { TermsAndConditionsPage } from '../features/legal/pages/TermsAndConditionsPage';
+import { PublicContactSupportPage } from '../features/support/pages/PublicContactSupportPage';
+import { SuperAdminShell } from '../features/super-admin/components/SuperAdminShell';
 import { StudentShell } from '../features/student/components/StudentShell';
 import { AdminShell } from '../features/admin/components/AdminShell';
 import { App } from './App';
@@ -148,14 +145,54 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'student/support',
+            lazy: async () => {
+              const { SupportPage } =
+                await import('../features/support/pages/SupportPage');
+              return { Component: SupportPage };
+            },
+          },
+          {
+            path: 'student/support/new',
+            lazy: async () => {
+              const { CreateSupportTicketPage } =
+                await import('../features/support/pages/CreateSupportTicketPage');
+              return { Component: CreateSupportTicketPage };
+            },
+          },
+          {
+            path: 'student/support/:ticketId',
+            lazy: async () => {
+              const { SupportTicketDetailsPage } =
+                await import('../features/support/pages/SupportTicketDetailsPage');
+              return { Component: SupportTicketDetailsPage };
+            },
+          },
+          {
             path: 'student/settings',
             element: (
               <Navigate replace to="/student/profile#profile-security" />
             ),
           },
           {
+            path: 'student/chats',
+            lazy: async () => {
+              const { ChatsPage } =
+                await import('../features/chat/pages/ChatsPage');
+              return { Component: ChatsPage };
+            },
+          },
+          {
+            path: 'student/chats/:conversationId',
+            lazy: async () => {
+              const { ConversationDetailsPage } =
+                await import('../features/chat/pages/ConversationDetailsPage');
+              return { Component: ConversationDetailsPage };
+            },
+          },
+          {
             path: 'student/chat',
-            element: <Navigate replace to="/student/dashboard" />,
+            element: <Navigate replace to="/student/chats" />,
           },
           {
             path: 'listing/:id',
@@ -171,6 +208,87 @@ export const router = createBrowserRouter([
               const { PublicSellerProfilePage } =
                 await import('../features/marketplace/pages/PublicSellerProfilePage');
               return { Component: PublicSellerProfilePage };
+            },
+          },
+        ],
+      },
+      {
+        element: <SuperAdminShell />,
+        children: [
+          {
+            path: 'super-admin',
+            element: <Navigate replace to="/super-admin/dashboard" />,
+          },
+          {
+            path: 'super-admin/dashboard',
+            lazy: async () => {
+              const { SuperAdminDashboardPage } =
+                await import('../features/super-admin/pages/SuperAdminDashboardPage');
+              return { Component: SuperAdminDashboardPage };
+            },
+          },
+          {
+            path: 'super-admin/admins',
+            lazy: async () => {
+              const { SuperAdminAdminsPage } =
+                await import('../features/super-admin/pages/SuperAdminAdminsPage');
+              return { Component: SuperAdminAdminsPage };
+            },
+          },
+          {
+            path: 'super-admin/admins/:adminId',
+            lazy: async () => {
+              const { SuperAdminAdminDetailsPage } =
+                await import('../features/super-admin/pages/SuperAdminAdminDetailsPage');
+              return { Component: SuperAdminAdminDetailsPage };
+            },
+          },
+          {
+            path: 'super-admin/colleges',
+            lazy: async () => {
+              const { SuperAdminCollegesPage } =
+                await import('../features/super-admin/pages/SuperAdminCollegesPage');
+              return { Component: SuperAdminCollegesPage };
+            },
+          },
+          {
+            path: 'super-admin/colleges/:collegeId',
+            lazy: async () => {
+              const { SuperAdminCollegeDetailsPage } =
+                await import('../features/super-admin/pages/SuperAdminCollegeDetailsPage');
+              return { Component: SuperAdminCollegeDetailsPage };
+            },
+          },
+          {
+            path: 'super-admin/categories',
+            lazy: async () => {
+              const { SuperAdminCategoriesPage } =
+                await import('../features/super-admin/pages/SuperAdminCategoriesPage');
+              return { Component: SuperAdminCategoriesPage };
+            },
+          },
+          {
+            path: 'super-admin/audit-logs',
+            lazy: async () => {
+              const { SuperAdminAuditLogsPage } =
+                await import('../features/super-admin/pages/SuperAdminAuditLogsPage');
+              return { Component: SuperAdminAuditLogsPage };
+            },
+          },
+          {
+            path: 'super-admin/platform-settings',
+            lazy: async () => {
+              const { SuperAdminPlatformSettingsPage } =
+                await import('../features/super-admin/pages/SuperAdminPlatformSettingsPage');
+              return { Component: SuperAdminPlatformSettingsPage };
+            },
+          },
+          {
+            path: 'super-admin/system-health',
+            lazy: async () => {
+              const { SuperAdminSystemHealthPage } =
+                await import('../features/super-admin/pages/SuperAdminSystemHealthPage');
+              return { Component: SuperAdminSystemHealthPage };
             },
           },
         ],
@@ -286,16 +404,42 @@ export const router = createBrowserRouter([
               return { Component: AdminAuditLogsPage };
             },
           },
+          {
+            path: 'admin/support',
+            lazy: async () => {
+              const { AdminSupportPage } =
+                await import('../features/support/pages/AdminSupportPage');
+              return { Component: AdminSupportPage };
+            },
+          },
+          {
+            path: 'admin/support/:ticketId',
+            lazy: async () => {
+              const { AdminSupportTicketDetailsPage } =
+                await import('../features/support/pages/AdminSupportTicketDetailsPage');
+              return { Component: AdminSupportTicketDetailsPage };
+            },
+          },
         ],
       },
       {
         element: <PublicShell />,
         children: [
           { path: 'privacy-policy', element: <PrivacyPolicyPage /> },
-          { path: 'terms-and-conditions', element: <TermsPage /> },
+          {
+            path: 'terms-and-conditions',
+            element: <TermsAndConditionsPage />,
+          },
           { path: 'refund-policy', element: <RefundPolicyPage /> },
-          { path: 'safety-guidelines', element: <SafetyGuidelinesPage /> },
-          { path: 'contact-support', element: <ContactSupportPage /> },
+          {
+            path: 'safety-guidelines',
+            lazy: async () => {
+              const { SafetyGuidelinesPage } =
+                await import('../features/safety/pages/SafetyGuidelinesPage');
+              return { Component: SafetyGuidelinesPage };
+            },
+          },
+          { path: 'contact-support', element: <PublicContactSupportPage /> },
           { path: 'about', element: <AboutPage /> },
         ],
       },

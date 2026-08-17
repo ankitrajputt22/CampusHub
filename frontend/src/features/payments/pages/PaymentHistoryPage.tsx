@@ -360,9 +360,19 @@ export function PaymentHistoryPage() {
           aria-hidden="true"
           className="mt-0.5 h-5 w-5 shrink-0 text-[#007b95]"
         />
-        Campus Hub never stores your card, UPI PIN, or bank credentials.
-        Payments are marked successful only after the backend verifies the
-        Razorpay signature.
+        <p>
+          Campus Hub never stores your card, UPI PIN, or bank credentials.
+          Payments are marked successful only after the backend verifies the
+          Razorpay signature. Payments and refund requests are subject to our{' '}
+          <Link className="font-black text-[#007b95]" to="/refund-policy">
+            Refund Policy
+          </Link>
+          . Never share passwords, OTPs, card details, or a UPI PIN. Read our{' '}
+          <Link className="font-black text-[#007b95]" to="/safety-guidelines">
+            Safety Guidelines
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );

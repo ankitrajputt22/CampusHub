@@ -5,12 +5,14 @@ import {
   LoaderCircle,
   LogOut,
   Power,
+  ScrollText,
   ShieldAlert,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { UseFormRegisterReturn } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { z } from 'zod';
 
 import { getApiErrorMessage } from '../../../auth/api/authApi';
@@ -95,6 +97,34 @@ export function ProfileAccountSettings({
           label="Deactivate account"
           onClick={() => setModal('deactivate')}
         />
+      </div>
+
+      <div className="mt-5 rounded-xl border border-[#e0e4ec] bg-[#f8f9ff] p-4">
+        <div className="flex items-start gap-3">
+          <ScrollText
+            aria-hidden="true"
+            className="mt-0.5 h-5 w-5 shrink-0 text-[#364768]"
+          />
+          <div>
+            <h3 className="text-sm font-bold text-[#263346]">
+              Legal and privacy resources
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-[#68707d]">
+              Review how Campus Hub handles your information, marketplace use,
+              payments, and refund requests.
+            </p>
+            <nav
+              aria-label="Legal resources"
+              className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-[#00677f]"
+            >
+              <Link to="/privacy-policy">Privacy Policy</Link>
+              <Link to="/terms-and-conditions">Terms and Conditions</Link>
+              <Link to="/refund-policy">Refund Policy</Link>
+              <Link to="/safety-guidelines">Safety Guidelines</Link>
+              <Link to="/student/support">Contact Support</Link>
+            </nav>
+          </div>
+        </div>
       </div>
 
       {modal === 'password' && (

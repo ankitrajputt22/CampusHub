@@ -66,10 +66,12 @@ export function LoginPage() {
       const response = await login(values);
       saveCampusSession(response, values.rememberMe);
 
-      if (
-        response.user.role === 'ADMIN' ||
-        response.user.role === 'SUPER_ADMIN'
-      ) {
+      if (response.user.role === 'SUPER_ADMIN') {
+        navigate('/super-admin/dashboard', { replace: true });
+        return;
+      }
+
+      if (response.user.role === 'ADMIN') {
         navigate('/admin/dashboard', { replace: true });
         return;
       }
@@ -227,6 +229,16 @@ export function LoginPage() {
                   to="/privacy-policy"
                 >
                   Privacy Policy
+                </Link>
+                .
+              </p>
+              <p className="mt-2 text-center text-xs text-slate-500">
+                New here?{' '}
+                <Link
+                  className="font-semibold text-[#00677f]"
+                  to="/safety-guidelines"
+                >
+                  Read our Safety Guidelines
                 </Link>
                 .
               </p>

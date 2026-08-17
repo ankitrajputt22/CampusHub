@@ -5,6 +5,7 @@ import {
   Flag,
   Heart,
   MapPin,
+  MessageCircle,
   PackageCheck,
   RefreshCw,
   ShieldCheck,
@@ -20,6 +21,7 @@ import {
 } from '../../payments/api/paymentsApi';
 import { openRazorpayCheckout } from '../../payments/lib/razorpayCheckout';
 import { useStudentDashboard } from '../../student/dashboard/context/studentDashboardContext';
+import { createListingConversation } from '../../chat/api/chatApi';
 import { getExploreListing } from '../api/exploreApi';
 import {
   addListingToWishlist,
@@ -68,6 +70,7 @@ export function ListingDetailsPage({
     'Create order and open secure checkout',
   );
   const [order, setOrder] = useState<OrderInitiation | null>(null);
+  const [chatBusy, setChatBusy] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -188,6 +191,20 @@ export function ListingDetailsPage({
     if (buyBusy) return;
     setBuyOpen(false);
     setBuyError(null);
+  }
+
+  async function contactSeller() {
+    if (!product || chatBusy) return;
+    setChatBusy(true);
+    setError(null);
+    try {
+      const result = await createListingConversation(product.id);
+      navigate(`/student/chats/${result.conversation.id}`);
+    } catch (requestError) {
+      setError(apiErrorMessage(requestError));
+    } finally {
+      setChatBusy(false);
+    }
   }
 
   if (loading) return <ProductDetailsSkeleton />;
@@ -332,6 +349,12 @@ export function ListingDetailsPage({
                   : 'Keep payment and order confirmation inside Campus Hub.'}
               </li>
             </ul>
+            <Link
+              className="mt-4 inline-flex text-sm font-black text-emerald-900 underline decoration-emerald-400 underline-offset-4"
+              to="/safety-guidelines"
+            >
+              Stay safe while buying — read the Safety Guidelines
+            </Link>
           </section>
         </div>
 
@@ -409,7 +432,23 @@ export function ListingDetailsPage({
             ) : active && product.canBuy ? (
               <div className="mt-6 space-y-3">
                 <button
-                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#031635] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#153557]"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#031635] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#153557] disabled:cursor-wait disabled:opacity-60"
+                  disabled={chatBusy}
+                  onClick={() => void contactSeller()}
+                  type="button"
+                >
+                  {chatBusy ? (
+                    <RefreshCw
+                      aria-hidden="true"
+                      className="h-4 w-4 animate-spin"
+                    />
+                  ) : (
+                    <MessageCircle aria-hidden="true" className="h-4 w-4" />
+                  )}
+                  {chatBusy ? 'Opening chat…' : 'Contact seller'}
+                </button>
+                <button
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#bac5d3] px-5 text-sm font-bold text-[#263a52] hover:border-[#007b95] hover:text-[#007b95]"
                   onClick={() => setBuyOpen(true)}
                   type="button"
                 >

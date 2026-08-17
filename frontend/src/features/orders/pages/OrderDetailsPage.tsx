@@ -4,15 +4,17 @@ import {
   Check,
   CircleUserRound,
   MapPin,
+  MessageCircle,
   RotateCcw,
   ShieldCheck,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { resolveApiAssetUrl } from '../../../lib/apiClient';
 import { PaymentCheckoutButton } from '../../payments/components/PaymentCheckoutButton';
 import { useStudentDashboard } from '../../student/dashboard/context/studentDashboardContext';
+import { createOrderConversation } from '../../chat/api/chatApi';
 import {
   cancelOrder,
   confirmOrderPickup,
@@ -35,6 +37,7 @@ type MutableAction =
 export function OrderDetailsPage() {
   const { orderId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const id = Number(orderId);
   const { refresh: refreshDashboard } = useStudentDashboard();
   const [order, setOrder] = useState<OrderDetails | null>(null);
@@ -47,6 +50,7 @@ export function OrderDetailsPage() {
   );
   const [action, setAction] = useState<MutableAction | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
+  const [chatBusy, setChatBusy] = useState(false);
 
   const loadOrder = useCallback(
     async (signal?: AbortSignal) => {
@@ -100,6 +104,20 @@ export function OrderDetailsPage() {
       setError(apiErrorMessage(requestError, true));
     } finally {
       setActionBusy(false);
+    }
+  }
+
+  async function openOrderChat() {
+    if (!order || chatBusy) return;
+    setChatBusy(true);
+    setError(null);
+    try {
+      const result = await createOrderConversation(order.id);
+      navigate(`/student/chats/${result.conversation.id}`);
+    } catch (requestError) {
+      setError(apiErrorMessage(requestError, true));
+    } finally {
+      setChatBusy(false);
     }
   }
 
@@ -293,6 +311,21 @@ export function OrderDetailsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#071b33] px-4 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60"
+            disabled={chatBusy}
+            onClick={() => void openOrderChat()}
+            type="button"
+          >
+            {chatBusy ? (
+              <RotateCcw className="h-4 w-4 animate-spin" />
+            ) : (
+              <MessageCircle className="h-4 w-4" />
+            )}
+            {chatBusy
+              ? 'Opening chat…'
+              : `Message ${order.role === 'BUYER' ? 'seller' : 'buyer'}`}
+          </button>
           {order.availableActions.includes('PAY_NOW') && (
             <PaymentCheckoutButton
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#071b33] px-4 text-sm font-black text-white"
@@ -338,6 +371,23 @@ export function OrderDetailsPage() {
           )}
         </div>
       </section>
+
+      <p className="rounded-xl border border-[#dce2eb] bg-white px-4 py-3 text-sm leading-6 text-[#69778a]">
+        Payment failures, duplicate charges, eligible cancellations, and refund
+        requests are handled according to the{' '}
+        <Link className="font-black text-[#007b95]" to="/refund-policy">
+          Campus Hub Refund Policy
+        </Link>
+        . If you need help, create a{' '}
+        <Link className="font-black text-[#007b95]" to="/student/support/new">
+          support ticket
+        </Link>
+        . Review the{' '}
+        <Link className="font-black text-[#007b95]" to="/safety-guidelines">
+          Safety Guidelines
+        </Link>{' '}
+        before arranging pickup.
+      </p>
 
       {action && (
         <ConfirmActionModal

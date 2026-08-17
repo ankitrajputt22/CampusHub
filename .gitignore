@@ -46,3 +46,41 @@ replay_pid*
 
 # Docker
 docker-data/
+
+# Spring Boot local/secret config
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-staging.yml
+backend/src/main/resources/application-prod.yml
+backend/src/main/resources/application-*-secret.yml
+
+# Keep only example config files
+!backend/src/main/resources/application-local.example.yml
+!backend/src/main/resources/application-staging.example.yml
+!backend/src/main/resources/application-prod.example.yml
+
+# Uploaded/local storage files
+uploads/
+storage/
+media/
+files/
+backend/uploads/
+backend/storage/
+backend/media/
+backend/files/
+
+# Docker local override files
+docker-compose.override.yml
+docker-compose.local.yml
+
+# SSL / private keys / certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+
+# General build folders
+target/
+dist/
+build/
+coverage/

@@ -3,6 +3,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { getApiErrorMessage } from '../../../auth/api/authApi';
+import {
+  getOwnTrustScore,
+  type TrustScoreDetails,
+} from '../../../trust-score/api/trustScoreApi';
+import { TrustScoreCard } from '../../../trust-score/components/TrustScoreCard';
 import { useStudentDashboard } from '../../dashboard/context/studentDashboardContext';
 import { clearCampusSession, updateCampusUser } from '../../lib/session';
 import {
@@ -34,6 +39,9 @@ export function StudentProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [trustScoreDetails, setTrustScoreDetails] = useState<TrustScoreDetails>();
+  const [trustScoreLoading, setTrustScoreLoading] = useState(false);
+  const [trustScoreError, setTrustScoreError] = useState('');
   const navigate = useNavigate();
   const { refresh: refreshDashboard } = useStudentDashboard();
 
@@ -78,6 +86,18 @@ export function StudentProfilePage() {
     setProfile(updated);
     updateCampusUser({ trustScore: updated.trustScore.score });
     await refreshDashboard();
+  }
+
+  async function loadTrustScoreDetails() {
+    setTrustScoreLoading(true);
+    setTrustScoreError('');
+    try {
+      setTrustScoreDetails(await getOwnTrustScore());
+    } catch (caught) {
+      setTrustScoreError(getApiErrorMessage(caught) || 'Please try again.');
+    } finally {
+      setTrustScoreLoading(false);
+    }
   }
 
   async function updatePassword(payload: ChangePasswordPayload) {
@@ -215,6 +235,25 @@ export function StudentProfilePage() {
       )}
 
       <ProfileHeader onPhotoSelected={savePhoto} profile={profile} />
+
+      <div className="flex justify-end">
+        {!trustScoreDetails && !trustScoreLoading && (
+          <button
+            className="rounded-lg border border-[#9fcbd2] bg-white px-4 py-2 text-xs font-bold text-[#00677f] hover:bg-[#effbfc]"
+            onClick={() => void loadTrustScoreDetails()}
+            type="button"
+          >
+            View Campus Trust Score breakdown
+          </button>
+        )}
+      </div>
+      {(trustScoreDetails || trustScoreLoading || trustScoreError) && (
+        <TrustScoreCard
+          error={trustScoreError}
+          loading={trustScoreLoading}
+          score={trustScoreDetails}
+        />
+      )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_390px]">
         <div className="space-y-6">

@@ -1,5 +1,6 @@
 import { AlertTriangle, Flag, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import type { ListingReportReason } from '../api/marketplaceApi';
 
@@ -143,6 +144,15 @@ export function ReportListingModal({
             {description.length}/500
           </span>
         </label>
+
+        <p className="mt-3 text-xs leading-5 text-[#667386]">
+          Reports must be honest and should not include passwords, OTPs, payment
+          credentials, or unnecessary private information.{' '}
+          <Link className="font-black text-[#007b95]" to="/safety-guidelines">
+            Review the Safety Guidelines
+          </Link>
+          .
+        </p>
 
         {error && (
           <div

@@ -5,9 +5,11 @@ import {
   Compass,
   FileWarning,
   Heart,
+  Headphones,
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircle,
   Package,
   Plus,
   Search,
@@ -29,6 +31,7 @@ import {
 } from 'react-router-dom';
 
 import { logout as requestLogout } from '../../auth/api/authApi';
+import { useChatUnreadCount } from '../../chat/hooks/useChatUnreadCount';
 import { NotificationBell } from '../../notifications/components/NotificationBell';
 import { StudentDashboardProvider } from '../dashboard/context/StudentDashboardProvider';
 import { useStudentDashboard } from '../dashboard/context/studentDashboardContext';
@@ -69,6 +72,12 @@ const primaryNav = [
     icon: ShoppingBag,
   },
   {
+    label: 'Messages',
+    shortLabel: 'Chats',
+    to: '/student/chats',
+    icon: MessageCircle,
+  },
+  {
     label: 'Payments',
     to: '/student/payments',
     icon: CircleDollarSign,
@@ -89,6 +98,7 @@ const accountNav = [
   { label: 'Profile', to: '/student/profile', icon: UserRound },
   { label: 'Notifications', to: '/student/notifications', icon: Bell },
   { label: 'My Reports', to: '/student/reports', icon: FileWarning },
+  { label: 'Contact Support', to: '/student/support', icon: Headphones },
 ];
 
 export function StudentShell() {
@@ -124,6 +134,7 @@ function StudentShellFrame() {
   const trustScore = data?.trustScore.score ?? cachedUser.trustScore;
   const unreadNotifications = data?.stats.unreadNotifications ?? 0;
   const wishlistItems = data?.stats.wishlistItems ?? 0;
+  const unreadChats = useChatUnreadCount();
 
   useEffect(() => {
     function handleSessionExpired() {
@@ -234,6 +245,12 @@ function StudentShellFrame() {
             label="Wishlist"
             to="/student/wishlist"
           />
+          <HeaderIconLink
+            badge={unreadChats}
+            icon={MessageCircle}
+            label="Messages"
+            to="/student/chats"
+          />
           <NotificationBell initialUnreadCount={unreadNotifications} />
           <Link
             className="hidden h-10 items-center gap-2 rounded-lg bg-[#031635] px-4 text-sm font-bold text-white hover:bg-[#1a2b4b] sm:inline-flex"
@@ -334,6 +351,7 @@ function StudentShellFrame() {
           <div className="space-y-1">
             {primaryNav.map((item) => (
               <SidebarLink
+                badge={item.to === '/student/chats' ? unreadChats : undefined}
                 key={item.to}
                 onClick={() => setMenuOpen(false)}
                 {...item}
@@ -423,11 +441,13 @@ function SidebarLink({
   to,
   icon: Icon,
   onClick,
+  badge,
 }: {
   label: string;
   to: string;
   icon: typeof LayoutDashboard;
   onClick: () => void;
+  badge?: number;
 }) {
   return (
     <NavLink
@@ -438,7 +458,12 @@ function SidebarLink({
       to={to}
     >
       <Icon aria-hidden="true" className="h-5 w-5 shrink-0" strokeWidth={1.8} />
-      <span>{label}</span>
+      <span className="min-w-0 flex-1">{label}</span>
+      {Boolean(badge && badge > 0) && (
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#00677f] px-1.5 text-[10px] font-black text-white">
+          {badge! > 99 ? '99+' : badge}
+        </span>
+      )}
     </NavLink>
   );
 }

@@ -886,6 +886,33 @@ export function SignupPage() {
             Log in
           </Link>
         </p>
+        <p className="text-center text-xs leading-5 text-slate-500">
+          By creating an account, you agree to our{' '}
+          <Link
+            className="font-semibold text-[#031635] hover:text-[#00677f]"
+            to="/terms-and-conditions"
+          >
+            Terms and Conditions
+          </Link>{' '}
+          and{' '}
+          <Link
+            className="font-semibold text-[#031635] hover:text-[#00677f]"
+            to="/privacy-policy"
+          >
+            Privacy Policy
+          </Link>
+          .
+        </p>
+        <p className="text-center text-xs text-slate-500">
+          Before joining the marketplace,{' '}
+          <Link
+            className="font-semibold text-[#00677f]"
+            to="/safety-guidelines"
+          >
+            read our Safety Guidelines
+          </Link>
+          .
+        </p>
       </form>
     </SignupShell>
   );

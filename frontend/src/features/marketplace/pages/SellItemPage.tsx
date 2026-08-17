@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 import { getCampusUser } from '../../student/lib/session';
@@ -475,7 +475,14 @@ export function SellItemPage() {
             <p className="mt-4 text-xs leading-5 text-[#687587]">
               By posting, you confirm that the item belongs to you, the details
               are accurate, and the listing follows Campus Hub marketplace
-              rules.
+              rules. Before posting, please review our{' '}
+              <Link
+                className="font-black text-[#007b95]"
+                to="/safety-guidelines"
+              >
+                Safety Guidelines
+              </Link>
+              .
             </p>
             <button
               className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#031635] px-6 text-sm font-black text-white shadow-sm transition hover:bg-[#153557] disabled:cursor-not-allowed disabled:bg-[#aeb8c5]"

@@ -22,6 +22,7 @@ import {
 } from '../../reports/api/reportsApi';
 import { ReportEntityModal } from '../../reports/components/ReportEntityModal';
 import { getCampusUser } from '../../student/lib/session';
+import { TrustScoreBadge } from '../../trust-score/components/TrustScoreBadge';
 import {
   getPublicSellerProfile,
   type PublicSellerProfile,
@@ -212,6 +213,13 @@ export function PublicSellerProfilePage() {
             <p className="mt-1 text-xs font-bold text-emerald-700">
               {profile.trustLevel}
             </p>
+            <div className="mt-3">
+              <TrustScoreBadge
+                compact
+                level={profile.trustLevel}
+                score={profile.trustScore}
+              />
+            </div>
           </div>
           <dl className="mt-4 space-y-3">
             <ProfileStat

@@ -120,6 +120,16 @@ export function BuyNowModal({
               Availability, college access, account status, and seller identity
               will be checked again before the order is created.
             </div>
+            <p className="mt-3 text-center text-xs leading-5 text-[#667386]">
+              Never share passwords, OTPs, card details, or a UPI PIN.{' '}
+              <Link
+                className="font-black text-[#007b95]"
+                to="/safety-guidelines"
+              >
+                Read the Safety Guidelines
+              </Link>
+              .
+            </p>
             {error && (
               <p
                 className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-800"

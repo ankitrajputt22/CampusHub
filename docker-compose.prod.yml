@@ -1,0 +1,95 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql-prod-data:/var/lib/mysql
+    networks:
+      - campus-hub-private
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:?Set SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:?Set SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:?Set SPRING_DATASOURCE_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_ACCESS_TOKEN_MINUTES: ${JWT_ACCESS_TOKEN_MINUTES:-15}
+      JWT_REFRESH_TOKEN_DAYS: ${JWT_REFRESH_TOKEN_DAYS:-7}
+      JWT_REMEMBER_ME_REFRESH_TOKEN_DAYS: ${JWT_REMEMBER_ME_REFRESH_TOKEN_DAYS:-30}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?Set CORS_ALLOWED_ORIGINS}
+      OTP_EXPIRY_MINUTES: ${OTP_EXPIRY_MINUTES:-10}
+      OTP_EXPOSE_DEV_CODES: "false"
+      PROFILE_PHOTO_STORAGE_DIRECTORY: ${PROFILE_PHOTO_STORAGE_DIRECTORY:-/app/data/profile-photos}
+      LISTING_IMAGE_STORAGE_DIRECTORY: ${LISTING_IMAGE_STORAGE_DIRECTORY:-/app/data/listing-images}
+      SUPPORT_ATTACHMENT_STORAGE_DIRECTORY: ${SUPPORT_ATTACHMENT_STORAGE_DIRECTORY:-/app/data/support-attachments}
+      CHAT_MAX_MESSAGES_PER_MINUTE: ${CHAT_MAX_MESSAGES_PER_MINUTE:-30}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:?Set RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:?Set RAZORPAY_KEY_SECRET}
+      RAZORPAY_API_BASE_URL: ${RAZORPAY_API_BASE_URL:-https://api.razorpay.com/v1}
+      RAZORPAY_MOCK_ENABLED: "false"
+    volumes:
+      - backend-file-data:/app/data
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - campus-hub-private
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?Set VITE_API_BASE_URL}
+        VITE_APP_NAME: ${VITE_APP_NAME:-Campus Hub}
+        VITE_PUBLIC_BASE_URL: ${VITE_PUBLIC_BASE_URL:?Set VITE_PUBLIC_BASE_URL}
+        VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:?Set VITE_RAZORPAY_KEY_ID}
+        VITE_SUPPORT_EMAIL: ${VITE_SUPPORT_EMAIL:-}
+    restart: unless-stopped
+    networks:
+      - campus-hub-private
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx-certs:/etc/nginx/certs:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - campus-hub-private
+
+networks:
+  campus-hub-private:
+    driver: bridge
+
+volumes:
+  mysql-prod-data:
+  backend-file-data:
+  nginx-certs:

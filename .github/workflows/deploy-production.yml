@@ -1,0 +1,57 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-production:
+    if: vars.ENABLE_PRODUCTION_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Run backend tests
+        working-directory: backend
+        run: mvn test
+
+      - name: Run frontend checks
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run build
+
+      - name: Build production Docker images
+        run: |
+          docker build -t campushub-backend:${{ github.sha }} ./backend
+          docker build \
+            --build-arg VITE_API_BASE_URL="${{ vars.PROD_API_BASE_URL }}" \
+            --build-arg VITE_APP_NAME="Campus Hub" \
+            --build-arg VITE_PUBLIC_BASE_URL="${{ vars.PROD_PUBLIC_BASE_URL }}" \
+            --build-arg VITE_RAZORPAY_KEY_ID="${{ vars.PROD_RAZORPAY_KEY_ID }}" \
+            --build-arg VITE_SUPPORT_EMAIL="${{ vars.PROD_SUPPORT_EMAIL }}" \
+            -t campushub-frontend:${{ github.sha }} ./frontend
+
+      - name: Production deployment handoff
+        run: |
+          echo "Production deployment requires manual approval, backup, and configured secrets."
+          echo "Required before replacing this step: database backup, image registry push, server deploy, migration verification, smoke tests."

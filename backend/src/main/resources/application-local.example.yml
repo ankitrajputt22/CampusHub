@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/campushub-local;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
+
+  h2:
+    console:
+      enabled: ${SPRING_H2_CONSOLE_ENABLED:true}
+      path: ${SPRING_H2_CONSOLE_PATH:/h2-console}
+
+app:
+  security:
+    jwt-secret: ${JWT_SECRET:replace-with-local-jwt-secret-minimum-32-characters}
+
+  otp:
+    expose-dev-codes: ${OTP_EXPOSE_DEV_CODES:true}
+
+  demo-data:
+    enabled: ${CAMPUSHUB_DEMO_DATA_ENABLED:false}
+    password: ${CAMPUSHUB_DEMO_DATA_PASSWORD:change_me}
+    college-code: ${CAMPUSHUB_DEMO_DATA_COLLEGE_CODE:RECMAINPURI}
+
+  razorpay:
+    mock-enabled: ${RAZORPAY_MOCK_ENABLED:true}
